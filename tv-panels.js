@@ -18,7 +18,8 @@ window.InfoDeskTVPanels = (() => {
     },reset(){started=false;},select(index,now=Date.now(),sub=null){main=index;if(sub!==null)pages[main]=sub;nextMain=now+15000;nextSub=now+8000;},snapshot(){return {main,sub:pages[main],locked}},clamp(count){pages[main]%=Math.max(1,count)}};
   }
   let ready=false,timer=null,refreshTimer=null,models=[],schedule=createSchedule(),lastFrame='',lastSecondary=-1,tvOrder=[],paused=false;
-  const capacities=new Map(),cache=new WeakMap();
+  const capacities=new Map(),cache=new WeakMap(),desktopPrices=new Map();
+  function flashPrices(body){if(tv())return;body.querySelectorAll('.tv-price').forEach(node=>{const card=node.parentElement,key=card.dataset.symbol||card.querySelector('.tv-tag')?.textContent,value=Number(node.textContent.replaceAll(',','')),before=desktopPrices.get(key);if(!key||!Number.isFinite(value))return;desktopPrices.set(key,value);if(before!==undefined&&before!==value){card.classList.remove('flash-up','flash-down');void card.offsetWidth;card.classList.add(value>before?'flash-up':'flash-down');setTimeout(()=>card.classList.remove('flash-up','flash-down'),500);}});}
   function put(node,html){if(node&&cache.get(node)!==html){node.innerHTML=html;cache.set(node,html);}}
   function copy(node){if(!node)return '';const n=node.cloneNode(true);n.removeAttribute('id');n.classList.remove('region-hidden','rail-item-hidden');n.querySelectorAll('[id]').forEach(e=>e.removeAttribute('id'));return n.outerHTML;}
   const unavailable=()=>`<div class="tv-empty">${tr('暫時未能取得數據','DATA TEMPORARILY UNAVAILABLE')}</div>`;
@@ -57,7 +58,7 @@ window.InfoDeskTVPanels = (() => {
     Q('#desktopTransitFilters').innerHTML=s.main===4&&!tv()?window.InfoDeskDisplay.regionControls()+`<button class="text-button" data-desktop-sort>${tr(state.transitSorted?'按到站排序':'固定次序',state.transitSorted?'ARRIVAL ORDER':'FIXED ORDER')}</button>`:'';Q('#desktopTransitFilters').hidden=s.main!==4||tv();
     if(cache.get(body)!==items.join(''))window.InfoDeskCharts?.destroyWithin(body);
     body.className='tv-page-body tv-type-'+m.type;body.style.setProperty('--tv-rows',String(Math.ceil(items.length/(m.type==='hk'?2:['us','fx'].includes(m.type)?3:m.type==='trends'?2:1))));put(body,items.join(''));body.dataset.main=String(s.main);body.dataset.sub=String(sub);body.dataset.pages=String(m.pages.length);
-    updateClocks();
+    updateClocks();flashPrices(body);
     // Paginate whole cards until all fit. Never scroll or clip a bottom half-card.
     const overflow=body.scrollHeight>body.clientHeight+2||[...body.children].some(e=>e.scrollHeight>e.clientHeight+2||e.scrollWidth>e.clientWidth+2);
     if(overflow&&m.capacity>1){const first=sub*m.capacity;m.capacity--;capacities.set(m.key,m.capacity);m.pages=chunks(m.items,m.capacity);schedule.clamp(m.pages.length);drawPage(false);return;}
