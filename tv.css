@@ -204,3 +204,116 @@ html.tv-mode .ticker-track{animation-duration:var(--tv-ticker-duration,100s);wil
 html.tv-mode .ticker-track[data-tv-ticker="waapi"]{animation:none}
 html.tv-mode.tv-background .ticker-track{animation-play-state:paused!important}
 
+/* TV v2: fixed panels and complete-card pagination. No scrolling, even in the ticker. */
+.tv-only{display:none}
+html.tv-mode .stage-deck,html.tv-mode .data-rail,html.tv-mode #tickerTrack{display:none!important}
+html.tv-mode .broadcast-layout{grid-template-rows:28px minmax(0,1fr)}
+html.tv-mode .program-bar{grid-row:1;min-height:0}
+html.tv-mode .tv-main{display:grid;grid-column:1;grid-row:2;grid-template-rows:104px minmax(0,1fr) 32px;min-height:0;height:100%}
+html.tv-mode .tv-main-head{padding:12px 24px;display:flex;justify-content:space-between;gap:16px;border-bottom:1px solid var(--line)}
+html.tv-mode .tv-main-head h1{font-size:42px;line-height:1.25}
+html.tv-mode .tv-main-head p{font-size:15px;color:var(--muted);margin-top:6px}
+html.tv-mode .tv-page-markers{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0;line-height:1}
+html.tv-mode .tv-page-markers b{font-size:22px;color:var(--orange)}
+html.tv-mode .tv-page-markers span{font-size:18px;color:#eee}
+html.tv-mode .tv-page-body{padding:16px 22px;min-width:0;min-height:0;display:grid;gap:14px;overflow:visible;align-content:stretch}
+html.tv-mode .tv-page-body>*{min-width:0;min-height:0}
+html.tv-mode .tv-page-source{padding:6px 22px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);line-height:18px}
+html.tv-mode .tv-type-clocks{display:flex;flex-direction:column;padding:0;gap:0}
+html.tv-mode .tv-session{display:grid;grid-template-columns:34% minmax(0,1fr);flex:1;border-bottom:1px solid var(--line)}
+html.tv-mode .tv-session .countdown-block{padding:20px}
+html.tv-mode .tv-session .countdown-number{font-size:58px;line-height:1.2;margin:16px 0}
+html.tv-mode .tv-session .countdown-label{font-size:22px;flex-wrap:wrap}
+html.tv-mode .tv-index-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+html.tv-mode .tv-index-grid .tv-quote{padding:16px 12px;gap:5px;border-right:1px solid var(--line)}
+html.tv-mode .tv-index-grid .tv-price{font-size:51px}
+html.tv-mode .tv-index-grid .tv-change{font-size:27px}
+html.tv-mode .tv-index-grid small{font-size:11px}
+html.tv-mode .tv-type-hk{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(var(--tv-rows),minmax(0,1fr))}
+html.tv-mode .tv-type-us,html.tv-mode .tv-type-fx{grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(var(--tv-rows),minmax(0,1fr))}
+html.tv-mode .tv-quote,html.tv-mode .tv-fx{display:flex;flex-direction:column;justify-content:center;gap:8px;padding:16px 20px;border-bottom:1px solid var(--line);overflow-wrap:anywhere}
+html.tv-mode .tv-tag{align-self:flex-start;background:var(--orange);color:#0c070b;padding:3px 8px;font-size:18px;line-height:1.2;font-weight:900}
+html.tv-mode .tv-price{display:block;font-size:64px;line-height:1.2;font-weight:800;color:white;letter-spacing:-1px}
+html.tv-mode .tv-type-us .tv-quote{padding:12px;gap:5px}
+html.tv-mode .tv-type-us .tv-price{font-size:60px}
+html.tv-mode .tv-change{font-size:27px;line-height:1.15}
+html.tv-mode .tv-quote .tv-change.up:before{content:'▲ '}
+html.tv-mode .tv-quote .tv-change.down:before{content:'▼ '}
+html.tv-mode .tv-quote small,html.tv-mode .tv-fx small{font-size:13px;line-height:1.4;color:var(--muted)}
+html.tv-mode .tv-quote .spark-pending{min-height:18px;font-size:13px}
+html.tv-mode .tv-quote .sparkline{height:30px;margin:0}
+html.tv-mode .tv-fx-name{display:flex;align-items:center;gap:10px;font-size:20px}
+html.tv-mode .tv-type-transit{display:flex;flex-direction:column;justify-content:space-evenly;gap:0;padding:6px 22px}
+html.tv-mode .tv-type-transit .route-card{flex:1;grid-template-columns:98px minmax(0,1fr) 43%;gap:14px;padding:6px 0}
+html.tv-mode .tv-type-transit .route-no{font-size:50px;line-height:1.2}
+html.tv-mode .tv-type-transit .operator{font-size:11px;margin-top:5px}
+html.tv-mode .tv-type-transit .route-dest{font-size:25px;line-height:1.15}
+html.tv-mode .tv-type-transit .route-stop{font-size:14px;line-height:1.35;margin-top:5px}
+html.tv-mode .tv-type-transit .eta{font-size:37px;padding:8px 3px}
+html.tv-mode .tv-type-transit .eta small{font-size:12px}
+html.tv-mode .tv-type-weather{display:flex;flex-direction:column;gap:10px;justify-content:space-evenly}
+html.tv-mode .tv-type-weather>*{flex-shrink:0}
+html.tv-mode .tv-type-weather .location{padding:0 12px}
+html.tv-mode .tv-type-weather .temp{font-size:76px;line-height:1.2}
+html.tv-mode .tv-type-weather .humidity{font-size:19px}
+html.tv-mode .tv-type-weather .warning-box{margin:0;padding:7px 12px;font-size:18px}
+html.tv-mode .tv-weather-summary{font-size:19px;line-height:1.45;overflow-wrap:anywhere}
+html.tv-mode .tv-type-weather .forecast{margin:0;gap:14px}
+html.tv-mode .tv-type-weather .day{padding:7px 5px}
+html.tv-mode .tv-type-weather .day-date{font-size:21px}
+html.tv-mode .tv-type-weather .day-temp{font-size:36px}
+html.tv-mode .tv-type-weather .day-desc{font-size:17px;line-height:1.35}
+html.tv-mode .tv-type-weather .day-rh{font-size:13px;margin-top:4px}
+html.tv-mode .tv-type-weather .fx-note{font-size:12px;margin:0}
+html.tv-mode .tv-type-news{grid-template-rows:repeat(var(--tv-rows),minmax(0,1fr))}
+html.tv-mode .tv-news-card{border-bottom:1px solid var(--line);display:flex;flex-direction:column;justify-content:center;gap:12px;padding:5px 0}
+html.tv-mode .tv-news-card>div{display:flex;align-items:center;gap:12px}
+html.tv-mode .tv-news-card small{font-size:15px;color:var(--muted)}
+html.tv-mode .tv-news-card a{font-size:28px;line-height:1.3;text-decoration:none;overflow-wrap:anywhere}
+html.tv-mode .tv-type-trends{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(var(--tv-rows),minmax(0,1fr))}
+html.tv-mode .tv-trend-card{display:flex;gap:16px;padding:16px 10px;border-bottom:1px solid var(--line);align-items:flex-start;overflow-wrap:anywhere}
+html.tv-mode .tv-trend-rank{font-size:34px;color:var(--orange);line-height:1.2;flex:0 0 40px;white-space:nowrap}
+html.tv-mode .tv-trend-card>div{min-width:0}
+html.tv-mode .tv-trend-card a{display:block;text-decoration:none}
+html.tv-mode .tv-trend-term{font-size:30px;line-height:1.2}
+html.tv-mode .tv-trend-card small{display:block;color:var(--orange);font-size:18px;margin:8px 0}
+html.tv-mode .tv-related{font-size:18px;line-height:1.35;color:#ddd6e5;margin-top:8px}
+html.tv-mode .tv-rail{display:grid;grid-row:2;grid-column:2;grid-template-rows:repeat(3,minmax(0,1fr));gap:8px;height:100%;min-width:0;min-height:0}
+html.tv-mode .tv-rail-panel{display:grid;grid-template-rows:37px minmax(0,1fr);min-height:0}
+html.tv-mode .tv-rail-panel>header{display:flex;justify-content:space-between;align-items:center;padding:6px 14px;border-bottom:1px solid var(--line)}
+html.tv-mode .tv-rail-panel h2{font-size:23px}
+html.tv-mode .tv-rail-panel>header b{color:var(--orange);font-size:15px}
+html.tv-mode #tvRailWeatherBody{padding:9px 14px;display:grid;grid-template-rows:1fr auto;gap:5px;min-height:0}
+html.tv-mode .tv-rail-temperatures{display:grid;grid-template-columns:1fr 1fr;gap:12px;min-height:0}
+html.tv-mode .tv-rail-temperatures>div{display:grid;grid-template-columns:1fr auto;align-content:center;gap:3px}
+html.tv-mode .tv-rail-temperatures b{font-size:18px;align-self:center}
+html.tv-mode .tv-rail-temperatures strong{font-size:55px;line-height:1.1;grid-row:1/3;grid-column:2}
+html.tv-mode .tv-rail-temperatures small{font-size:11px;color:var(--muted)}
+html.tv-mode .tv-rail-warning{padding:6px 9px;background:#15271c;color:#b1e1ba;font-size:17px;line-height:1.3;overflow-wrap:anywhere}
+html.tv-mode .active-warning{background:#bd174b;color:#fff;font-weight:900}
+html.tv-mode #tvRailTransitBody{display:grid;grid-template-rows:repeat(2,minmax(0,1fr));padding:0 14px;min-height:0}
+html.tv-mode .tv-fast-row{display:grid;grid-template-columns:85px minmax(0,1fr) 120px;align-items:center;gap:10px;border-bottom:1px solid var(--line)}
+html.tv-mode .tv-fast-row>b{font-size:43px;line-height:1.2}
+html.tv-mode .tv-fast-row>span{font-size:23px;line-height:1.15}
+html.tv-mode .tv-fast-row>span small{display:block;font-size:12px;color:var(--muted);margin-top:5px}
+html.tv-mode .tv-fast-row>strong{font-size:46px;line-height:1.2;text-align:center;padding:5px;white-space:nowrap}
+html.tv-mode .tv-fast-row>strong small{display:block;font-size:12px;margin-top:4px}
+html.tv-mode .tv-fast-row .soon{background:var(--magenta);color:#fff}
+html.tv-mode #tvRailFxBody{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr));padding:5px 14px;gap:4px 16px;min-height:0}
+html.tv-mode .tv-rail-fx{min-height:0;display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto;align-content:center;gap:1px 8px;border-bottom:1px solid var(--line)}
+html.tv-mode .tv-rail-fx>div{display:flex;flex-direction:column;gap:3px;justify-content:center}
+html.tv-mode .tv-rail-fx .tv-tag{font-size:14px;padding:2px 5px}
+html.tv-mode .tv-rail-fx small{font-size:11px;color:var(--muted);white-space:nowrap}
+html.tv-mode .tv-rail-fx>strong{font-size:38px;align-self:center;line-height:1.2;text-align:right}
+html.tv-mode .tv-rail-fx>span{grid-column:1/-1;font-size:15px;line-height:1.2}
+html.tv-mode .tv-empty{padding:20px;font-size:24px;color:var(--muted)}
+html.tv-mode #tvTicker{display:flex;height:100%;align-items:center;gap:15px;padding:0 12px}
+html.tv-mode .tv-ticker-items{flex:1;min-width:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;font-size:21px;line-height:1.15}
+html.tv-mode .tv-ticker-items>span{display:block;min-width:0;white-space:normal}
+html.tv-mode .tv-ticker-items em{font-style:normal}
+html.tv-mode .tv-ticker-page{font-size:16px;color:var(--orange);flex-shrink:0}
+html.tv-mode .ticker-window{height:100%;overflow:visible}
+html.tv-mode .lower-headline a,html.tv-mode .breaking strong{display:block;-webkit-line-clamp:unset;overflow:visible}
+html.tv-mode .tv-main a,html.tv-mode .tv-rail a{pointer-events:none}
+html.tv-mode #deskSurface{overscroll-behavior:none}
+

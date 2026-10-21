@@ -59,7 +59,7 @@ window.InfoDeskView = (() => {
   }
   function marketTick(now=Date.now()){for(const key of ['HK','US']){const s=C.status(key,now),prev=marketPrevious.get(key);if(prev?.next&&lastClockTick!==null&&now-lastClockTick<10000&&prev.next.time>lastClockTick&&prev.next.time<=now)enqueueAlert('市場時刻',english()?`${text(s.name)} ${prev.next.type==='開市'?'OPEN':prev.next.type==='收市'?'CLOSED':text(prev.next.type)}${prev.next.early?' (EARLY CLOSE)':''}`:`${s.name}${prev.next.type}${prev.next.early&&prev.next.type==='收市'?'（提早收市）':''}`,3);marketPrevious.set(key,s);const html=countdownHTML(s);if(!tv()||slide===0)put('#countdown'+key,html);put('#mini'+key,html);}lastClockTick=now;}
   function showSlide(n){slide=n;all('.stage').forEach((e,i)=>{e.classList.toggle('active',i===n);e.inert=!mobile()&&i!==n;});all('[data-slide]').forEach(e=>{e.setAttribute('aria-current',String(+e.dataset.slide===n));e.disabled=locked&&!mobile();});}
-  function rotationTick(now=Date.now()){const nextLock=C.commute(now)&&!mobile()&&!tv();if(nextLock!==locked){locked=nextLock;rotateAt=now+15000;if(locked)showSlide(1);else showSlide(slide);}
+  function rotationTick(now=Date.now()){if(tv())return;const nextLock=C.commute(now)&&!mobile();if(nextLock!==locked){locked=nextLock;rotateAt=now+15000;if(locked)showSlide(1);else showSlide(slide);}
     if(mobile()){all('.stage').forEach(e=>e.inert=false);Q('#rotationStatus').textContent='香港視角 · 全部資料';return;}
     if(locked){if(slide!==1)showSlide(1);Q('#rotationStatus').textContent='通勤時段 · 固定交通';Q('#pauseRotation').disabled=true;return;}
     Q('#pauseRotation').disabled=false;Q('#rotationStatus').textContent=tv()?(english()?'TV · AUTO ROTATE 15 SEC':'TV · 15 秒自動輪播'):paused?'輪播已暫停':'15 秒輪播 · 香港視角';
