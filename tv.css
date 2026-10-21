@@ -23,6 +23,10 @@ html.tv-mode .header-actions{gap:10px;font-size:12px}
 html.tv-mode .panel-head h1{font-size:44px}
 html.tv-mode .countdown-stage h1{font-size:38px}
 html.tv-mode .transit-stage h1{font-size:34px}
+html.tv-mode .session-row{min-height:180px;flex:1 0 190px}
+html.tv-mode .transit-stage .panel-head{padding-top:10px;padding-bottom:8px}
+html.tv-mode .transit-stage .next-bus{padding-top:8px;padding-bottom:8px}
+html.tv-mode .transit-stage .route-card{padding-top:4px;padding-bottom:4px}
 html.tv-mode .countdown-number{font-size:46px}
 html.tv-mode .focus-quote .quote-price{font-size:46px}
 html.tv-mode .mini-clocks .countdown-number{font-size:30px}

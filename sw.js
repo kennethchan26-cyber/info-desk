@@ -1,5 +1,5 @@
 "use strict";
-const VERSION='20261021-tv3',SHELL='infodesk-shell-'+VERSION,FONTS='infodesk-fonts-v1';
+const VERSION='20261021-tv4',SHELL='infodesk-shell-'+VERSION,FONTS='infodesk-fonts-v1';
 const ASSETS=['index.html','styles.css','tv.css','tv.js','config.js','i18n.js','public-data.js','market-calendar.js','forex.js','transit-order.js','app.js','news-extra.js','broadcast.js','signals.js','pwa.js','app.webmanifest','icon.svg','apple-touch-icon.png','icon-192.png','icon-512.png','icon-maskable-512.png','barlow-condensed.woff2'];
 const base=new URL('./',self.location.href);
 const FONT_CSS='https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Noto+Sans+TC:wght@500;700;900&display=swap';
