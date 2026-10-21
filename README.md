@@ -4,7 +4,7 @@
 
 ## 發佈檔案
 
-只上載以下 12 個檔案，不要拖入整個工作資料夾、設定截圖、測試輸出、憑證或瀏覽器資料。
+只上載以下 14 個檔案，不要拖入整個工作資料夾、設定截圖、測試輸出、憑證或瀏覽器資料。
 
 | 檔案 | 用途 |
 | --- | --- |
@@ -20,6 +20,16 @@
 | icon.svg | 網站圖示 |
 | apple-touch-icon.png | iPhone 180 × 180 圖示，沒有個人 metadata |
 | README.md | 本說明 |
+| market-calendar.js | 2026／2027 港交所及 NYSE 交易日曆、時區及倒數 |
+| broadcast.js | 電視台式輪播、側欄、新聞條及本頁觀測線（不另取數據） |
+
+## 電視台式版面
+
+電腦主板每 15 秒輪換，可用底部分頁手動切換或暫停；香港時間星期一至五 07:00–09:30 及 17:30–20:00 固定交通。手機寬度小於 768px 時所有板塊單欄直排，不自動輪換。下方新聞條每 10 秒更新，每四條穿插市場數據。突發提示仍為優先佇列，每條 10 秒。
+
+日曆在 market-calendar.js；[港交所 2026 通告](https://www.hkex.com.hk/-/media/HKEX-Market/Services/Circulars-and-Notices/Participant-and-Members-Circulars/SEHK/2025/ce_SEHK_CT_075_2025.pdf)、[2027 通告](https://www.hkex.com.hk/-/media/HKEX-Market/Services/Circulars-and-Notices/Participant-and-Members-Circulars/SEHK/2026/ce_SEHK_CT_077_2026.pdf)、[NYSE 交易日曆](https://www.nyse.com/trade/hours-calendars)。包含週末、休市日、港股半日市及 NYSE 13:00 提早收市；紐約時區由 Intl 自動處理夏令時間。港股倒數以持續交易 16:00（半日 12:00）結束為準，不含收市競價。只覆蓋 2026–2027，不把未知年度或臨時停市當作已確認交易日。開頁第一刻不發提示；睡眠／背景恢復亦不補播錯過的開收市提示。
+
+走勢線只累積本頁實際收到的報價，第二筆不同時間報價到達後才繪圖，不代表完整日內歷史。英數使用 Barlow Condensed，中文使用 Noto Sans TC（Google Fonts；不能載入時自動使用系統字款）。沒有使用任何其他媒體的名稱、標誌或專用字款。
 
 ## GitHub Pages 發佈
 

@@ -65,6 +65,7 @@ function transitAlert(route,next){
 }
 
 function updateTicker(){
+  if(window.InfoDeskView){window.InfoDeskView.updateTicker();return;}
   const hsi=state.indices.HSI?`恒指 ${state.indices.HSI.price} ${state.indices.HSI.change}`:"恒指 —";
   const dji=state.indices.DJI?`道指 ${state.indices.DJI.price} ${state.indices.DJI.change}`:"道指 —";
   const parts=[hsi,dji,`天氣：${state.warningText}`,...state.headlines.slice(0,8)];
@@ -98,7 +99,8 @@ async function fetchTransit(item){
 const etaHTML=e=>`<span class="eta ${e.mins<=3?"soon":""}">${e.mins<=0?"即到":e.mins+" 分"}<small>${esc(e.operator)} · ${esc(e.time)}</small></span>`;
 async function loadTransit(){
   const results=await Promise.allSettled(CFG.TRANSIT.map(fetchTransit));
-  $("#transit").innerHTML=`<div class="transit-list">${CFG.TRANSIT.map((r,i)=>{const x=results[i];let body='<span class="route-error">暫時未能取得數據</span>';if(x.status==="fulfilled"){body=x.value.length?x.value.slice(0,3).map(etaHTML).join(""):'<span class="route-error">暫無班次資料</span>';transitAlert(r,x.value[0])}return`<div class="route-card"><div class="route-no">${esc(r.route)}</div><div class="route-meta"><div class="route-dest">往 ${esc(r.destination)}</div><div class="route-stop">${esc(r.stopName)}</div><div class="operator">${esc(r.operator)}</div><div class="etas">${body}</div></div></div>`}).join("")}</div>`;
+  $("#transit").innerHTML=`<div class="transit-list">${CFG.TRANSIT.map((r,i)=>{const x=results[i];let body='<span class="route-error">暫時未能取得數據</span>';if(x.status==="fulfilled"){body=x.value.length?x.value.slice(0,3).map(etaHTML).join(""):'<span class="route-error">暫無班次資料</span>';transitAlert(r,x.value[0])}return`<div class="route-card"><div class="route-identity"><div class="route-no">${esc(r.route)}</div><div class="operator">${esc(r.operator)}</div></div><div class="route-meta"><div class="route-dest">往 ${esc(r.destination)}</div><div class="route-stop">${esc(r.stopName)}</div></div><div class="etas">${body}</div></div>`}).join("")}</div>`;
+  window.InfoDeskView?.transit(results);
   if(results.some(x=>x.status==="fulfilled"))setStamp("#transitUpdated");
 }
 
