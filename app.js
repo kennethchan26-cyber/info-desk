@@ -57,11 +57,21 @@ async function desktopNotify(title,message){
 }
 function enqueueAlert(type,text,priority=5){
   if(state.suppressAlerts||navigator.onLine===false||(type==='新 Gmail'&&!state.gmailOpen))return;
-  state.alertQueue.push({kind:type,type:T(type),text:T(text),priority});state.alertQueue.sort((a,b)=>a.priority-b.priority);showNextAlert();
+  const level=type==='天氣警告'?'breaking':'latest';
+  state.alertQueue.push({kind:type,type:T(type),text:T(text),priority,level});
+  // Only weather can interrupt a yellow update; resume the displaced item afterwards.
+  if(level==='breaking'&&state.alertShowing&&state.alertCurrent?.level!=='breaking'){
+    clearTimeout(state.alertTimer);state.alertQueue.push(state.alertCurrent);state.alertShowing=false;$('#breaking').hidden=true;
+  }
+  state.alertQueue.sort((a,b)=>(a.level==='breaking'?0:1)-(b.level==='breaking'?0:1)||a.priority-b.priority);showNextAlert();
 }
 function showNextAlert(){
   if(state.alertShowing||!state.alertQueue.length)return;
-  const item=state.alertQueue.shift();if(item.kind==='新 Gmail'&&!state.gmailOpen){showNextAlert();return}state.alertKind=item.kind;state.alertShowing=true;$("#breakingType").textContent=item.type;$("#breakingText").textContent=item.text;$("#breaking").hidden=false;beep();desktopNotify(item.type,item.text);state.alertTimer=setTimeout(closeAlert,10000);
+  const item=state.alertQueue.shift();if(item.kind==='新 Gmail'&&!state.gmailOpen){showNextAlert();return}state.alertKind=item.kind;state.alertCurrent=item;state.alertShowing=true;
+  const banner=$('#breaking');banner.dataset.level=item.level;banner.setAttribute('aria-live',item.level==='breaking'?'assertive':'polite');banner.querySelector('.breaking-badge').textContent=item.level==='breaking'?L('突發','BREAKING'):L('最新','LATEST');
+  $("#breakingType").textContent=item.type;$("#breakingText").textContent=item.text;banner.hidden=false;
+  banner.getAnimations?.().forEach(a=>a.cancel());banner.animate?.([{clipPath:'inset(0 100% 0 0)'},{clipPath:'inset(0 0 0 0)'}],{duration:300,easing:'ease-out'});
+  if(!item.notified){beep();desktopNotify(item.type,item.text);item.notified=true}state.alertTimer=setTimeout(closeAlert,10000);
 }
 function closeAlert(){clearTimeout(state.alertTimer);$("#breaking").hidden=true;state.alertShowing=false;setTimeout(showNextAlert,180)}
 function testAlerts(){enqueueAlert("測試提示","這是測試：橫額會在 10 秒後收起，亦可按 × 關閉。",1);enqueueAlert("測試提示","第二條測試：佇列依次顯示，沒有重疊。",5)}

@@ -10,7 +10,7 @@ window.InfoDeskNetwork = (() => {
     if(u.hostname==='data.weather.gov.hk'&&u.pathname==='/weatherAPI/opendata/weather.php')return 'weather';
     if((u.hostname==='data.etagmb.gov.hk'&&u.pathname.startsWith('/eta/route-stop/'))||(u.hostname==='data.etabus.gov.hk'&&u.pathname.startsWith('/v1/transport/kmb/eta/'))||(u.hostname==='rt.data.gov.hk'&&u.pathname.startsWith('/v2/transport/citybus/eta/')))return 'transit';
     if(u.hostname==='api.frankfurter.dev'&&u.pathname==='/v2/rates')return 'fx';
-    if(u.hostname==='query1.finance.yahoo.com'&&u.pathname==='/v7/finance/spark')return 'markets';
+    if(u.hostname==='query1.finance.yahoo.com'&&(u.pathname==='/v7/finance/spark'||/^\/v8\/finance\/chart\/[A-Za-z0-9^.%_-]+$/.test(u.pathname)))return 'markets';
     if(u.hostname==='trends.google.com'&&u.pathname==='/trending/rss')return 'trends';
     if(u.hostname==='news.google.com'&&u.pathname==='/rss/search'&&/^site:(news\.now\.com|i-cable\.com)$/.test(u.searchParams.get('q')))return 'localNews';
     if(u.hostname==='search.cnbc.com'&&u.pathname==='/rs/search/combinedcms/view.xml'&&['100003114','15839069','20910258','19832390'].includes(u.searchParams.get('id')))return 'usNews';
@@ -21,7 +21,7 @@ window.InfoDeskNetwork = (() => {
     if(['localNews','worldNews','trends','usNews'].includes(g))return /<rss[\s>][\s\S]*<item[\s>]/i.test(body)||(/rthk\.hk/.test(url)&&/https:\/\/news\.rthk\.hk\/rthk\/(?:ch|en)\/component\/k2\//.test(body));
     const start=body.indexOf('{'),end=body.lastIndexOf('}'),json=g==='markets'?JSON.parse(body.slice(start,end+1).replace(/\r?\n\s*/g,'')):JSON.parse(body);
     if(g==='fx')return Array.isArray(json)&&json.some(x=>Number(x.rate)>0);
-    if(g==='markets')return Array.isArray(json.spark?.result)&&json.spark.result.some(x=>Number(x.response?.[0]?.meta?.regularMarketPrice)>0);
+    if(g==='markets')return (Array.isArray(json.spark?.result)&&json.spark.result.some(x=>Number(x.response?.[0]?.meta?.regularMarketPrice)>0))||(Array.isArray(json.chart?.result)&&json.chart.result.some(x=>Array.isArray(x.timestamp)&&Number(x.meta?.regularMarketPrice)>0));
     if(g==='transit')return Array.isArray(json.data)||Array.isArray(json.data?.eta);
     if(g==='weather'){const type=new URL(url).searchParams.get('dataType');return type==='warnsum'?Boolean(json&&typeof json==='object'&&!Array.isArray(json)):type==='rhrread'?Array.isArray(json.temperature?.data):type==='fnd'?Array.isArray(json.weatherForecast):Boolean(json.forecastDesc||json.generalSituation)}
   }catch{}return false;}

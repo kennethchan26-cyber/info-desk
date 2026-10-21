@@ -93,3 +93,24 @@ html.tv-mode .tv-type-weather .location-name{font-size:28px!important}html.tv-mo
 html.tv-mode .lower-headline,html.tv-mode .lower-headline *,html.tv-mode .breaking strong{font-size:40px!important}html.tv-mode .lower-third{grid-row:5}html.tv-mode .ticker-shell{grid-row:6;height:56px}html.tv-mode .tv-ticker-items,html.tv-mode .tv-ticker-items *{font-size:30px!important}html.tv-mode .ticker-label{font-size:28px!important}html.tv-mode .breaking{left:10.8px;right:10.8px;bottom:66.8px;height:92px}html.tv-mode .utility{height:32px}html.tv-mode .utility summary{font-size:0!important}html.tv-mode .utility summary span{font-size:26px!important;line-height:32px}html.tv-mode .utility summary a{pointer-events:none}html.tv-mode a{pointer-events:none!important}html.tv-mode #appNotices span{font-size:26px!important}html.tv-mode #installHelp{display:none!important}html.tv-mode .header-warning{animation:weatherPulse 2.5s ease-in-out infinite!important}
 @media(max-width:767px){html:not(.tv-mode) .region-filters{padding:10px}html:not(.tv-mode) .region-tag{font-size:11px}html:not(.tv-mode) .eta-clock{font-size:13px}html:not(.tv-mode) #headerWeather{display:none}html:not(.tv-mode) .rail-pagination{display:none}html:not(.tv-mode) .panel,html:not(.tv-mode) .panel-body{overflow:visible;max-height:none}html:not(.tv-mode) .chart-mobile-page{display:flex!important;flex-direction:column;order:12}html:not(.tv-mode) .chart-mobile-page .indices-charts{display:grid;grid-template-columns:1fr}html:not(.tv-mode) .chart-mobile-page .focus-chart-slot{height:400px}}
 
+/* Severity is independent of message priority: red is reserved for weather. */
+.breaking[data-level="latest"]{background:#ffc400;color:#07060c;border-color:#ffc400}
+.breaking[data-level="latest"] .breaking-badge{background:#07060c;color:#ffc400}
+.breaking[data-level="latest"] small,.breaking[data-level="latest"] strong,.breaking[data-level="latest"] button{color:#07060c}
+.breaking[data-level="breaking"]{background:#e51f31;color:#fff}
+.breaking[data-level="breaking"] .breaking-badge{background:#fff;color:#d81729}
+html.tv-mode #tickerTrack{display:flex!important;align-items:center;font-size:30px!important}
+html.tv-mode #tickerTrack *{font-size:30px!important;line-height:1.2}
+html.tv-mode #tickerTrack[data-tv-ticker="waapi"]{animation:none!important}
+html.tv-mode #tvTicker{display:none!important}
+html.tv-mode .ticker-window{overflow:hidden!important;height:100%;display:flex;align-items:center}
+html.tv-mode .ticker-set{gap:42px;padding-right:42px;align-items:center}
+html.tv-mode .flash-up{animation:flash-up .5s ease-out!important}
+html.tv-mode .flash-down{animation:flash-down .5s ease-out!important}
+.flash-up :is(.tv-price,.chart-live-price,[data-flash-value],.tv-next-arrival em){animation:ink-up .5s ease-out}
+.flash-down :is(.tv-price,.chart-live-price,[data-flash-value],.tv-next-arrival em){animation:ink-down .5s ease-out}
+html.tv-mode .flash-up :is(.tv-price,.quote-price,.fx-rate,.rail-value,.ticker-value,.chart-live-price,[data-flash-value],.tv-next-arrival em){animation:ink-up .5s ease-out!important}
+html.tv-mode .flash-down :is(.tv-price,.quote-price,.fx-rate,.rail-value,.ticker-value,.chart-live-price,[data-flash-value],.tv-next-arrival em){animation:ink-down .5s ease-out!important}
+.tv-next-arrival{white-space:nowrap;color:#ddd6e5}.tv-next-arrival em{font-style:normal;color:#fff}
+html.tv-mode .tv-next-arrival,html.tv-mode .tv-next-arrival em{font-size:26px!important;line-height:1.25}
+

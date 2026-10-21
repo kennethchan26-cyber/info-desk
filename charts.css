@@ -28,4 +28,20 @@
 .chart-modal-content{min-height:0;min-width:0;padding:10px}.chart-modal[open]{grid-template-columns:minmax(0,1fr)}.chart-modal>*{min-width:0}.chart-credit{padding:5px 16px 9px;font-size:12px;color:#a69eb5;overflow-wrap:anywhere}.chart-credit a{color:#d8d0e3}
 .chart-tv.chart-card{padding:12px;cursor:default}.chart-tv .chart-name{font-size:36px;line-height:1.2}.chart-tv .chart-session{font-size:26px;line-height:1.2;padding:3px 8px}.chart-tv .chart-quote strong{font-size:56px;line-height:1.18}.chart-tv .chart-quote>span{font-size:26px;line-height:1.2}.chart-tv .chart-high-low{font-size:28px;line-height:1.2;margin:0 0 8px}.chart-tv .chart-time-axis{font-size:26px;line-height:1.2;min-height:34px;padding-right:94px}.chart-tv .chart-loading{font-size:26px}.chart-tv .chart-caption{display:none}.chart-tv.chart-spark{padding:0;height:70px;min-height:70px}.chart-tv.chart-focus .chart-name{font-size:42px}.chart-tv.chart-focus .chart-quote strong{font-size:72px}.chart-tv.chart-focus .chart-quote>span{font-size:36px}
 html.tv-mode .chart-modal{display:none}.chart-tv .chart-widget{pointer-events:none}
+.chart-metadata{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;gap:3px 12px}
+.chart-card-heading{flex-direction:column;align-items:flex-start;justify-content:flex-start}
+.chart-quote{flex-direction:column;align-items:flex-end;justify-content:flex-start;gap:0;margin:0;text-align:right}
+.chart-high-low{grid-column:1/-1;display:flex;justify-content:space-between;gap:8px;margin:2px 0 6px;font-size:14px}
+.chart-index .chart-high-low{display:none}
+.chart-time-axis{position:relative;display:block;height:20px;padding:0;min-height:20px}
+.chart-time-axis span{position:absolute;top:3px;transform:translateX(-50%);white-space:nowrap}
+.chart-crosshair-readout{position:absolute;top:4px;left:6px;z-index:4;padding:5px 8px;background:#07060ce8;border:1px solid #ff8a00;color:white;font-size:15px;pointer-events:none;max-width:calc(100% - 15px)}
+.chart-volume-status{position:absolute;bottom:0;left:3px;font-size:11px;line-height:1.2;color:#aaa2ba;pointer-events:none;background:#07060c88}
+.chart-extreme{position:absolute;z-index:2;color:#d0c9db;background:#07060c99;pointer-events:none;font-size:12px;line-height:1.2;white-space:nowrap}
+.chart-tv .chart-extreme{font-size:26px!important;line-height:1.2}
+.chart-tv .chart-metadata{gap:2px 8px}.chart-tv .chart-quote{gap:0}.chart-tv .chart-quote>span{font-size:26px}
+.chart-tv .chart-time-axis{height:34px;min-height:34px;padding:0}
+.chart-tv .chart-volume-status{font-size:26px!important;line-height:1.2}
+.chart-tv .chart-crosshair-readout{display:none}
+.chart-tv .chart-high-low{font-size:26px!important;line-height:1.2}
 @media(max-width:767px){html:not(.tv-mode) .charts-index-grid{grid-template-columns:1fr;grid-template-rows:repeat(6,280px);height:auto}html:not(.tv-mode) .chart-focus{height:360px}html:not(.tv-mode) .chart-modal{width:100vw;height:100dvh;margin:0;inset:0;border:0;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}html:not(.tv-mode) .chart-modal-bar{gap:5px;padding:8px}html:not(.tv-mode) .chart-modal-bar>strong{font-size:18px}html:not(.tv-mode) .chart-range-controls{gap:3px}html:not(.tv-mode) .chart-range-controls button{padding:6px 7px;font-size:12px}html:not(.tv-mode) .chart-modal-content{padding:4px}html:not(.tv-mode) .chart-modal .chart-name{font-size:26px}html:not(.tv-mode) .chart-modal .chart-quote strong{font-size:48px}html:not(.tv-mode) .chart-modal .chart-high-low{font-size:17px}html:not(.tv-mode) .chart-credit{font-size:11px;padding:5px 8px}}

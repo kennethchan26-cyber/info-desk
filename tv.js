@@ -17,8 +17,14 @@ window.InfoDeskTV = (() => {
     root.style.setProperty('--tv-center-y',((viewport?.offsetTop||0)+h/2)+'px');
   }
   function scheduleFit(){if(fitFrame)return;fitFrame=requestAnimationFrame(()=>{fitFrame=0;fit()});}
+  let tickerAnimation=null,tickerDistance=0;
   function tickerChanged(){
-    if(enabled)window.InfoDeskTVPanels?.refresh();
+    const track=document.querySelector('#tickerTrack');if(!track)return;
+    if(!enabled){tickerAnimation?.cancel();tickerAnimation=null;delete track.dataset.tvTicker;return;}
+    const distance=track.querySelector('.ticker-set')?.offsetWidth||0;if(!distance)return;
+    const speed=72,offset=tickerAnimation?(Number(tickerAnimation.currentTime)||0)/1000*speed%Math.max(1,tickerDistance):0;
+    if(!tickerAnimation||Math.abs(distance-tickerDistance)>1){tickerAnimation?.cancel();track.dataset.tvTicker='waapi';tickerDistance=distance;tickerAnimation=track.animate([{transform:'translate3d(0,0,0)'},{transform:`translate3d(-${distance}px,0,0)`}],{duration:distance/speed*1000,iterations:Infinity,easing:'linear'});tickerAnimation.currentTime=offset/speed*1000;}
+    if(document.hidden||pageHidden)tickerAnimation.pause();else tickerAnimation.play();
   }
   function label(){const button=document.querySelector('#tvToggle');if(!button)return;button.setAttribute('aria-pressed',String(enabled));button.setAttribute('aria-label',english()?(enabled?'Exit TV mode':'Enter TV mode'):(enabled?'離開 TV 模式':'開啟 TV 模式'));button.title=button.getAttribute('aria-label');button.dataset.awake=String(Boolean(lock&&!lock.released));}
   async function release(){epoch++;const previous=lock;lock=null;label();if(previous)try{await previous.release()}catch{}}
@@ -30,11 +36,11 @@ window.InfoDeskTV = (() => {
       lock=acquired;label();acquired.addEventListener('release',()=>{if(lock===acquired){lock=null;label()}});
     }catch{}finally{pending=false;}
   }
-  function visibility(){root.classList.toggle('tv-background',Boolean(document.hidden||pageHidden));if(document.hidden||pageHidden)release();else wake();}
+  function visibility(){root.classList.toggle('tv-background',Boolean(document.hidden||pageHidden));if(document.hidden||pageHidden)release();else wake();tickerChanged();}
   function set(value,{url=true}={}){
     enabled=Boolean(value);root.classList.toggle('tv-mode',enabled);try{localStorage.setItem(key,enabled?'1':'0')}catch{}
     if(url)try{const next=new URL(location.href);next.searchParams.set('tv',enabled?'1':'0');history.replaceState(null,'',next)}catch{}
-    fit();label();if(enabled)wake();else release();
+    fit();label();if(enabled)wake();else release();tickerChanged();
     document.dispatchEvent(new CustomEvent('infodesk:tv',{detail:{enabled}}));window.dispatchEvent(new Event('resize'));
   }
   function init(){document.querySelector('#tvToggle').addEventListener('click',()=>set(!enabled));fit();label();wake();

@@ -2,9 +2,10 @@
 // Public market charts only. No Gmail, OAuth, cookies or private browser state is read.
 // Native data: Yahoo's undocumented Spark endpoint via the existing public-data reader.
 window.InfoDeskCharts = (() => {
-  const RANGE={"1d":{interval:"5m",label:["即日","DAY"]},"5d":{interval:"5m",label:["5 日","5 DAYS"]},"1mo":{interval:"1d",label:["1 個月","1 MONTH"]},"1y":{interval:"1d",label:["1 年","1 YEAR"]}};
+  const RANGE={"1d":{interval:"1m",label:["即日","DAY"]},"5d":{interval:"5m",label:["5 日","5 DAYS"]},"1mo":{interval:"1d",label:["1 個月","1 MONTH"]},"1y":{interval:"1d",label:["1 年","1 YEAR"]}};
   const BATCH=20,PERIOD=60000,STAGGER=24000,START_DELAY=12000,records=new Map(),mounted=new Map(),inflight=new Map(),lastAttempt=new Map();
   const failureUntil=new Map(),scheduled=new Map(),batchDiagnostics=new Map();let timer=null,modal=null,modalSymbol=null,focusCursor=0,lastFocus=0,observer=null;
+  const details=new Map(),detailAttempts=new Map(),detailBusy=new Set(),detailTimes=[];let detailNext=0;
   const english=()=>Boolean(window.InfoDeskI18n?.en()),L=(tc,en)=>english()?en:tc;
   const safe=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const config=()=>window.DASHBOARD_CONFIG||{},allItems=()=>[...(config().HK_MARKET||[]),...(config().US_MARKET||[])];
@@ -28,13 +29,40 @@ window.InfoDeskCharts = (() => {
     return {code:'PUBLIC_PROVIDER_ERROR'};
   }
   function parseSeries(row,range='1d'){
-    const response=row?.response?.[0],meta=response?.meta||{},times=response?.timestamp||[],values=response?.indicators?.quote?.[0]?.close||[];
+    const response=row?.response?.[0],meta=response?.meta||{},times=response?.timestamp||[],bars=response?.indicators?.quote?.[0]||{},values=bars.close||[];
     const points=[...new Map(times.flatMap((time,i)=>Number.isFinite(Number(time))&&values[i]!==null&&Number.isFinite(Number(values[i]))&&Number(values[i])>0?[[Number(time),{time:Number(time),value:Number(values[i])}]]:[])).values()].sort((a,b)=>a.time-b.time);
     if(points.length<2)throw new Error('No complete intraday series');
     const previous=Number(meta.previousClose??meta.chartPreviousClose),last=points[points.length-1];
     const regular=meta.currentTradingPeriod?.regular,sessionEnd=Number(regular?.end),sessionStart=Number(regular?.start),session=meta.exchangeTimezoneName||null;
     let sessionDate=null;try{sessionDate=new Intl.DateTimeFormat('en-CA',{timeZone:session||'Asia/Hong_Kong',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(last.time*1000));}catch{}
-    return {symbol:row.symbol,range,points,previous:Number.isFinite(previous)&&previous>0?previous:null,price:last.value,delta:Number.isFinite(previous)&&previous>0?last.value-previous:null,pct:Number.isFinite(previous)&&previous>0?(last.value/previous-1)*100:null,high:Number.isFinite(Number(meta.regularMarketDayHigh))?Number(meta.regularMarketDayHigh):null,low:Number.isFinite(Number(meta.regularMarketDayLow))?Number(meta.regularMarketDayLow):null,time:last.time,firstTime:points[0].time,session,sessionDate,sessionStart:Number.isFinite(sessionStart)?sessionStart:null,sessionEnd:Number.isFinite(sessionEnd)?sessionEnd:null,closedSessionComplete:range==='1d'&&Number.isFinite(sessionEnd)?Date.now()/1000>=sessionEnd&&last.time+300>=sessionEnd:null,currency:meta.currency||'',granularity:meta.dataGranularity||RANGE[range].interval,received:Date.now(),source:'Yahoo Finance',stale:false};
+    const field=name=>[...new Map(times.flatMap((time,i)=>bars[name]?.[i]!=null&&Number.isFinite(Number(bars[name][i]))?[[Number(time),{time:Number(time),value:Number(bars[name][i])}]]:[])).values()].sort((a,b)=>a.time-b.time);
+    const highs=field('high'),lows=field('low'),volume=field('volume'),highPoint=highs.reduce((a,b)=>!a||b.value>a.value?b:a,null),lowPoint=lows.reduce((a,b)=>!a||b.value<a.value?b:a,null);
+    return {symbol:row.symbol,range,points,volume,highPoint,lowPoint,previous:Number.isFinite(previous)&&previous>0?previous:null,price:last.value,delta:Number.isFinite(previous)&&previous>0?last.value-previous:null,pct:Number.isFinite(previous)&&previous>0?(last.value/previous-1)*100:null,high:highPoint?.value??(Number.isFinite(Number(meta.regularMarketDayHigh))?Number(meta.regularMarketDayHigh):null),low:lowPoint?.value??(Number.isFinite(Number(meta.regularMarketDayLow))?Number(meta.regularMarketDayLow):null),time:last.time,firstTime:points[0].time,session,sessionDate,sessionStart:Number.isFinite(sessionStart)?sessionStart:null,sessionEnd:Number.isFinite(sessionEnd)?sessionEnd:null,closedSessionComplete:range==='1d'&&Number.isFinite(sessionEnd)?Date.now()/1000>=sessionEnd&&last.time+300>=sessionEnd:null,currency:meta.currency||'',granularity:meta.dataGranularity||RANGE[range].interval,received:Date.now(),source:'Yahoo Finance',stale:false};
+  }
+  function detailURL(symbol,range='1d'){return 'https://query1.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(symbol)+'?range='+range+'&interval='+RANGE[range].interval;}
+  function onScreen(node){if(!mountedVisible(node))return false;const r=node.getBoundingClientRect();return r.bottom>0&&r.top<innerHeight&&r.right>0&&r.left<innerWidth;}
+  async function fetchDetail(entry){const {symbol,range}=entry,k=key(symbol,range),target=detailURL(symbol,range);detailBusy.add(k);detailAttempts.set(k,Date.now());
+    try{let body;if(location.protocol==='chrome-extension:'){const res=await(window.InfoDeskNetwork?.fetch||fetch)(target,{credentials:'omit',signal:AbortSignal.timeout(25000)});if(!res.ok)throw new Error('HTTP '+res.status);body=await res.json();}else body=parseResponse(await fetchJinaText('https://r.jina.ai/'+target.replace('https:','http:').replaceAll('&','%26'),25000,{'X-Cache-Tolerance':'60'}));
+      if(!body.chart?.result?.[0])throw new Error('Missing series');const r=parseSeries({symbol,response:body.chart.result},range);r.stale=Boolean(window.InfoDeskNetwork?.stale('markets'));details.set(k,r);
+    }catch(error){const r=details.get(k);if(r)r.stale=true;if(/429|limit/i.test(String(error)))detailAttempts.set(k,Date.now()+4*PERIOD);}
+    finally{detailBusy.delete(k);renderAll();}
+  }
+  function detailTick(){if(document.hidden||Date.now()<detailNext)return;const now=Date.now();while(detailTimes.length&&detailTimes[0]<=now-PERIOD)detailTimes.shift();if(detailTimes.length>=8)return;
+    const candidates=[...mounted.values()].filter(e=>e.mode!=='spark'&&onScreen(e.node)&&(!modal?.open||modal.contains(e.node))&&!detailBusy.has(key(e.symbol,e.range))&&now-(detailAttempts.get(key(e.symbol,e.range))||0)>=PERIOD).sort((a,b)=>(detailAttempts.get(key(a.symbol,a.range))||0)-(detailAttempts.get(key(b.symbol,b.range))||0));
+    const e=candidates[0];if(e){detailTimes.push(now);detailNext=now+1500;fetchDetail(e);}
+  }
+  function segmentsFor(record){
+    if(market(record.symbol)!=='HK'||!['1d','5d'].includes(record.range))return [record.points];
+    const groups=new Map();for(const p of record.points){const t=timeLabel(p.time),minutes=Number(t.slice(0,2))*60+Number(t.slice(3));if(minutes>=720&&minutes<780)continue;const group=Math.floor((p.time+28800)/86400)+':'+(minutes<720?'AM':'PM');if(!groups.has(group))groups.set(group,[]);groups.get(group).push(p);}return [...groups.values()];
+  }
+  function axisTimes(record,range){if(!record)return [];if(range!=='1d'){const n=Math.min(4,record.points.length);return Array.from({length:n},(_,i)=>record.points[Math.round((record.points.length-1)*i/Math.max(1,n-1))].time);}
+    const start=record.firstTime,end=record.time,hours=[];for(let t=Math.ceil(start/3600)*3600;t<=end;t+=3600)hours.push(t);
+    if(market(record.symbol)==='HK'){const selected=hours.filter(t=>[10,12,14,16].includes(Number(timeLabel(t).slice(0,2))));if(selected.length)return selected;}
+    if(hours.length<=4)return hours;return Array.from({length:4},(_,i)=>hours[Math.round(i*(hours.length-1)/3)]);
+  }
+  function chartTimeline(record){const times=new Set(record.points.map(p=>p.time));axisTimes(record,record.range).forEach(t=>times.add(t));
+    if(market(record.symbol)==='HK'&&['1d','5d'].includes(record.range)){const step=record.granularity==='1m'?60:300,days=new Set(record.points.map(p=>Math.floor((p.time+28800)/86400)));for(const day of days)for(let t=day*86400+4*3600;t<day*86400+5*3600&&t<=record.time;t+=step)times.add(t);}
+    return [...times].sort((a,b)=>a-b);
   }
   function parseResponse(body){if(typeof body!=='string')return body;const start=body.indexOf('{'),end=body.lastIndexOf('}');if(start<0||end<start)throw new Error('Invalid chart response');return JSON.parse(body.slice(start,end+1).replace(/\r?\n\s*/g,''));}
   function targetURL(symbols,range='1d'){return 'https://query1.finance.yahoo.com/v7/finance/spark?symbols='+encodeURIComponent(symbols.join(','))+'&range='+range+'&interval='+RANGE[range].interval;}
@@ -81,8 +109,8 @@ window.InfoDeskCharts = (() => {
   function metadataHTML(symbol,record,mode){
     const quote=[...document.querySelectorAll('#hkMarket .quote,#usMarket .quote')].find(node=>node.dataset.symbol===symbol);
     const livePrice=Number(quote?.querySelector('.quote-price')?.textContent.replaceAll(',','')),livePct=parseFloat(quote?.querySelector('.quote-change')?.textContent),liveDelta=Number(quote?.dataset.delta);
-    const price=livePrice>0?livePrice:record?.price,delta=Number.isFinite(liveDelta)?liveDelta:record?.delta,pct=Number.isFinite(livePct)?livePct:record?.pct,cls=delta>0?'up':delta<0?'down':'flat',arrow=delta>0?'▲':delta<0?'▼':'—';
-    return `<div class="chart-card-heading"><b class="chart-name">${safe(translatedName(symbol))}</b><span class="chart-session ${trading(symbol)?'trading':''}">${L(trading(symbol)?'交易中':'收市',trading(symbol)?'OPEN':'CLOSED')}</span></div><div class="chart-quote"><strong>${fmt(price)}</strong><span class="${cls}">${delta==null?'—':arrow+' '+fmt(Math.abs(delta))+' '+fmt(Math.abs(pct))+'%'}</span></div>${mode==='focus'||mode==='modal'?`<div class="chart-high-low"><span>${L('即日最高','DAY HIGH')} <b>${fmt(record?.high)}</b></span><span>${L('即日最低','DAY LOW')} <b>${fmt(record?.low)}</b></span></div>`:''}`;
+    const price=record?.price??(livePrice>0?livePrice:null),delta=record?.delta??(Number.isFinite(liveDelta)?liveDelta:null),pct=record?.pct??(Number.isFinite(livePct)?livePct:null),cls=delta>0?'up':delta<0?'down':'flat',arrow=delta>0?'▲':delta<0?'▼':'—';
+    return `<div class="chart-card-heading"><b class="chart-name">${safe(translatedName(symbol))}</b><span class="chart-session ${trading(symbol)?'trading':''}">${L(trading(symbol)?'交易中':'收市',trading(symbol)?'OPEN':'CLOSED')}</span></div><div class="chart-quote"><strong class="chart-live-price">${fmt(price)}</strong><span class="${cls}">${delta==null?'—':arrow+' '+fmt(Math.abs(delta))+' '+fmt(Math.abs(pct))+'%'}</span></div><div class="chart-high-low"><span>${L('前收','PREV')} <b>${fmt(record?.previous)}</b></span><span>${L('高','H')} <b>${fmt(record?.high)}</b></span><span>${L('低','L')} <b>${fmt(record?.low)}</b></span></div>`;
   }
   function mountedVisible(node){return node.isConnected&&node.getClientRects().length>0&&node.clientWidth>0&&node.clientHeight>0;}
   function plotSize(node){return {width:Math.max(0,Math.floor(Number(node?.clientWidth)||0)),height:Math.max(0,Math.floor(Number(node?.clientHeight)||0))};}
@@ -91,14 +119,14 @@ window.InfoDeskCharts = (() => {
     if(!size.width||!size.height||(entry.lastSize?.width===size.width&&entry.lastSize?.height===size.height))return;
     // These are unscaled logical dimensions; bounding rectangles include the
     // outer AirPlay transform and therefore must never size the inner canvas.
-    entry.lastSize=size;entry.chart.resize(size.width,size.height);
+    entry.lastSize=size;entry.chart.resize(size.width,size.height);entry.chart.applyOptions({rightPriceScale:{tickMarkDensity:Math.max(1,size.height/(5*(entry.tv?26:12)))}});requestAnimationFrame(()=>{positionAxis(entry);positionExtrema(entry)});
   }
   function observeChartSize(entry){
     if(typeof ResizeObserver!=='function')return;
     entry.resizeObserver=new ResizeObserver(()=>{if(entry.resizeFrame!=null)return;entry.resizeFrame=requestAnimationFrame(()=>{entry.resizeFrame=null;resizeChart(entry);});});
     entry.resizeObserver.observe(entry.plot);
   }
-  function clearChart(entry){entry.resizeObserver?.disconnect();entry.resizeObserver=null;if(entry.resizeFrame!=null)cancelAnimationFrame(entry.resizeFrame);entry.resizeFrame=null;entry.lastSize=null;try{entry.chart?.remove()}catch{}entry.chart=null;entry.series=null;entry.markers=null;entry.line=null;entry.dataKey=null;entry.kind=null;}
+  function clearChart(entry){entry.resizeObserver?.disconnect();entry.resizeObserver=null;if(entry.resizeFrame!=null)cancelAnimationFrame(entry.resizeFrame);entry.resizeFrame=null;entry.lastSize=null;try{entry.chart?.remove()}catch{}entry.chart=null;entry.series=null;entry.segments=[];entry.markerSets=[];entry.volumeSeries=null;entry.markers=null;entry.line=null;entry.dataKey=null;entry.kind=null;}
   function cardInit(entry){const {node,mode,symbol}=entry;node.classList.add('chart-card');node.classList.toggle('chart-tv',entry.tv);node.classList.toggle('chart-spark',mode==='spark');node.innerHTML=`${mode==='spark'?'':'<div class="chart-metadata"></div>'}<div class="chart-plot"><div class="chart-loading">${mode==='spark'?'…':L('正在讀取即日走勢','LOADING INTRADAY CHART')}</div></div>${mode==='spark'?'':'<div class="chart-time-axis"></div><div class="chart-caption"></div>'}`;entry.plot=node.querySelector('.chart-plot');entry.axis=node.querySelector('.chart-time-axis');entry.meta=node.querySelector('.chart-metadata');entry.caption=node.querySelector('.chart-caption');node.setAttribute('aria-label',translatedName(symbol)+' '+L('走勢','CHART'));}
   function fallback(entry){
     if(entry.kind==='widget'||entry.kind==='tv-unavailable')return;clearChart(entry);entry.plot.replaceChildren();
@@ -110,10 +138,15 @@ window.InfoDeskCharts = (() => {
     frame.src='chart-widget.html?'+params.toString();frame.title=translatedName(entry.symbol)+' TradingView';frame.sandbox='allow-scripts allow-popups';frame.referrerPolicy='no-referrer';frame.loading='lazy';frame.className='chart-widget';frame.setAttribute('scrolling','no');entry.plot.append(frame);
     if(entry.axis)entry.axis.textContent='';if(entry.caption)entry.caption.textContent=L('TradingView 備援 · 資料／字體由供應商控制','TradingView fallback · provider controls data / type');
   }
-  function axisHTML(record,range){if(!record)return '';const count=Math.min(4,record.points.length);return Array.from({length:count},(_,i)=>record.points[Math.round((record.points.length-1)*i/(count-1))]).map(p=>`<span>${safe(range==='1d'?timeLabel(p.time):dayLabel(p.time))}</span>`).join('');}
+  function axisHTML(record,range){return axisTimes(record,range).map(time=>`<span data-axis-time="${time}">${safe(range==='1d'?timeLabel(time):dayLabel(time))}</span>`).join('');}
+  function positionAxis(entry){if(!entry.chart||!entry.axis)return;entry.axis.querySelectorAll('[data-axis-time]').forEach(node=>{const x=entry.chart.timeScale().timeToCoordinate(Number(node.dataset.axisTime));node.style.left=Math.max(24,Math.min(entry.axis.clientWidth-35,x??0))+'px';});}
+  function positionExtrema(entry){if(!entry.chart||entry.mode==='spark'||!entry.record)return;entry.plot.querySelectorAll('.chart-extreme').forEach(n=>n.remove());
+    const right=entry.chart.priceScale('right').width(),width=entry.plot.clientWidth-right,height=entry.plot.clientHeight;
+    for(const [point,label]of [[entry.record.highPoint,'H'],[entry.record.lowPoint,'L']]){if(!point)continue;const x=entry.chart.timeScale().timeToCoordinate(point.time),y=entry.series.priceToCoordinate(point.value);if(x==null||y==null)continue;const tag=document.createElement('span');tag.className='chart-extreme';tag.textContent=label+' '+fmt(point.value);entry.plot.append(tag);tag.style.left=Math.max(2,Math.min(width-tag.offsetWidth-2,x-tag.offsetWidth/2))+'px';tag.style.top=Math.max(2,Math.min(height*.78-tag.offsetHeight,y+(label==='H'?-tag.offsetHeight-6:8)))+'px';}
+  }
   function render(entry){
-    if(!mountedVisible(entry.node))return;const record=records.get(key(entry.symbol,entry.range));
-    if(entry.meta){const html=metadataHTML(entry.symbol,record,entry.mode);if(entry.cachedMeta!==html){entry.meta.innerHTML=html;entry.cachedMeta=html;}}
+    if(!mountedVisible(entry.node))return;const detail=details.get(key(entry.symbol,entry.range)),batch=records.get(key(entry.symbol,entry.range)),record=detail||batch;entry.record=record;
+    if(entry.meta){const html=metadataHTML(entry.symbol,record,entry.mode);if(entry.cachedMeta!==html){entry.meta.innerHTML=html;entry.cachedMeta=html;window.InfoDeskView?.flash(entry.meta,'chart:'+entry.mode+':'+entry.symbol,record?.price);}}
     resizeChart(entry);
     if(!record){if(failureUntil.has(key(entry.symbol,entry.range)))fallback(entry);return;}
     if(!window.LightweightCharts){fallback(entry);return;}
@@ -122,17 +155,27 @@ window.InfoDeskCharts = (() => {
     if(entry.kind!=='native'){
       clearChart(entry);entry.plot.replaceChildren();
       const size=plotSize(entry.plot);entry.lastSize=size;
-      entry.chart=LC.createChart(entry.plot,{autoSize:false,width:Math.max(1,size.width),height:Math.max(1,size.height),layout:{background:{type:LC.ColorType.Solid,color:'transparent'},textColor:'#bdb8cc',fontSize:entry.tv?26:12,fontFamily:'"Barlow Condensed", "Noto Sans TC", sans-serif',attributionLogo:false},grid:{vertLines:{visible:false},horzLines:{visible:!compact,color:'#ffffff12'}},rightPriceScale:{visible:!compact,borderVisible:false,minimumWidth:entry.tv?92:54,scaleMargins:{top:.12,bottom:.12}},leftPriceScale:{visible:false},timeScale:{visible:false,rightOffset:3,fixLeftEdge:true,fixRightEdge:true,minBarSpacing:.1},localization:{locale:english()?'en-HK':'zh-HK',timeFormatter:timeLabel},crosshair:{mode:LC.CrosshairMode.Hidden},handleScroll:false,handleScale:false,kineticScroll:{mouse:false,touch:false}});
+      entry.chart=LC.createChart(entry.plot,{autoSize:false,width:Math.max(1,size.width),height:Math.max(1,size.height),layout:{background:{type:LC.ColorType.Solid,color:'transparent'},textColor:'#bdb8cc',fontSize:entry.tv?26:12,fontFamily:'"Barlow Condensed", "Noto Sans TC", sans-serif',attributionLogo:false},grid:{vertLines:{visible:false},horzLines:{visible:!compact,color:'#ffffff16'}},rightPriceScale:{visible:!compact,borderVisible:false,ticksVisible:true,entireTextOnly:true,tickMarkDensity:Math.max(1,size.height/(5*(entry.tv?26:12))),minimumWidth:entry.tv?100:62,scaleMargins:{top:.16,bottom:compact?.12:.30}},leftPriceScale:{visible:false},timeScale:{visible:false,rightOffset:3,fixLeftEdge:true,fixRightEdge:true,minBarSpacing:.1},localization:{locale:english()?'en-HK':'zh-HK',timeFormatter:timeLabel},crosshair:{mode:entry.tv||compact?LC.CrosshairMode.Hidden:LC.CrosshairMode.Normal,vertLine:{color:'#ffffff75',labelVisible:true},horzLine:{color:'#ffffff75',labelVisible:true}},handleScroll:false,handleScale:false,kineticScroll:{mouse:false,touch:false}});
       observeChartSize(entry);
-      entry.series=entry.chart.addSeries(LC.AreaSeries,{lineWidth:1,lineColor:color,topColor:green?'rgba(0,200,83,.24)':'rgba(255,59,48,.24)',bottomColor:green?'rgba(0,200,83,.01)':'rgba(255,59,48,.01)',priceLineVisible:!compact,lastValueVisible:!compact,priceLineWidth:1,priceLineStyle:LC.LineStyle.Dashed,crosshairMarkerVisible:false,lastPriceAnimation:LC.LastPriceAnimationMode.Disabled});entry.kind='native';
+      entry.segments=[];entry.markerSets=[];entry.volumeSeries=entry.chart.addSeries(LC.HistogramSeries,{priceScaleId:'volume',priceFormat:{type:'volume'},priceLineVisible:false,lastValueVisible:false});entry.volumeSeries.priceScale().applyOptions({scaleMargins:{top:.80,bottom:0},visible:false});
+      entry.tooltip=document.createElement('div');entry.tooltip.className='chart-crosshair-readout';entry.tooltip.hidden=true;entry.plot.append(entry.tooltip);
+      if(!compact&&!entry.tv)entry.chart.subscribeCrosshairMove(param=>{if(!param.time||!param.point){entry.tooltip.hidden=true;return;}const point=entry.record?.points.find(p=>p.time===param.time);if(!point){entry.tooltip.hidden=true;return;}const v=entry.record.volume.find(p=>p.time===param.time)?.value;entry.tooltip.textContent=timeLabel(param.time)+' HKT · '+fmt(point.value)+(v!=null?' · '+L('量 ','VOL ')+v.toLocaleString('en-HK'):'');entry.tooltip.hidden=false;});entry.kind='native';
     }
-    entry.series.applyOptions({lineColor:color,topColor:green?'rgba(0,200,83,.24)':'rgba(255,59,48,.24)',bottomColor:green?'rgba(0,200,83,.01)':'rgba(255,59,48,.01)',autoscaleInfoProvider:base=>{const info=base();if(info?.priceRange&&record.previous!==null){info.priceRange.minValue=Math.min(info.priceRange.minValue,record.previous);info.priceRange.maxValue=Math.max(info.priceRange.maxValue,record.previous);}return info;}});
-    entry.series.setData(record.points);
-    if(entry.line)entry.series.removePriceLine(entry.line);entry.line=record.previous===null?null:entry.series.createPriceLine({price:record.previous,color:'#a2a0aa',lineWidth:1,lineStyle:LC.LineStyle.Dashed,axisLabelVisible:!compact,title:''});
-    const last=record.points[record.points.length-1],marker=[{time:last.time,position:'atPriceMiddle',price:last.value,color,shape:'circle',size:compact?.5:1}];
-    if(entry.markers)entry.markers.setMarkers(marker);else entry.markers=LC.createSeriesMarkers(entry.series,marker,{autoScale:false});
+    const segments=segmentsFor(record),timeline=chartTimeline(record),last=record.points.at(-1);
+    if(entry.line&&entry.series)entry.series.removePriceLine(entry.line);entry.line=null;
+    while(entry.segments.length>segments.length){entry.markerSets.pop()?.detach();entry.chart.removeSeries(entry.segments.pop());}
+    segments.forEach((points,i)=>{let series=entry.segments[i];if(!series){series=entry.chart.addSeries(LC.AreaSeries,{lineWidth:1,priceLineStyle:LC.LineStyle.Dashed,lastPriceAnimation:LC.LastPriceAnimationMode.Disabled});entry.segments.push(series);entry.markerSets.push(LC.createSeriesMarkers(series,[],{autoScale:false}));}
+      const isLast=i===segments.length-1;series.applyOptions({lineColor:color,topColor:green?'rgba(0,200,83,.20)':'rgba(255,59,48,.20)',bottomColor:'transparent',priceLineVisible:!compact&&isLast,lastValueVisible:!compact&&isLast,crosshairMarkerVisible:!entry.tv&&!compact,autoscaleInfoProvider:base=>{const info=base();if(info?.priceRange){const ext=[record.previous,record.high,record.low].filter(Number.isFinite);info.priceRange.minValue=Math.min(info.priceRange.minValue,...ext);info.priceRange.maxValue=Math.max(info.priceRange.maxValue,...ext);}return info;}});series.setData(points);
+      const markers=[];if(isLast)markers.push({time:last.time,position:'atPriceMiddle',price:last.value,color,shape:'circle',size:compact?.5:1});
+      if(!compact)for(const point of [record.highPoint,record.lowPoint])if(point&&points.some(p=>p.time===point.time))markers.push({time:point.time,position:'atPriceMiddle',price:point.value,color:'#c4bdcf',shape:'circle',size:.45});
+      entry.markerSets[i].setMarkers(markers.sort((a,b)=>a.time-b.time));
+    });
+    entry.series=entry.segments.at(-1);entry.line=record.previous===null?null:entry.series.createPriceLine({price:record.previous,color:'#a2a0aa',lineWidth:1,lineStyle:LC.LineStyle.Dashed,axisLabelVisible:!compact,title:compact?'':L('前收','PREV')});
+    const volumes=new Map(record.volume.map(p=>[p.time,p.value])),prices=new Map(record.points.map(p=>[p.time,p.value]));let prev=record.previous;
+    entry.volumeSeries.setData(timeline.map(time=>{const price=prices.get(time),v=volumes.get(time),up=price!=null&&(prev==null||price>=prev);if(price!=null)prev=price;return !compact&&v!=null?{time,value:v,color:up?'rgba(0,200,83,.24)':'rgba(255,59,48,.24)'}:{time};}));
     entry.chart.timeScale().fitContent();entry.dataKey=dataKey;
-    if(entry.axis)entry.axis.innerHTML=axisHTML(record,entry.range);
+    if(entry.axis){entry.axis.innerHTML=axisHTML(record,entry.range);requestAnimationFrame(()=>{positionAxis(entry);positionExtrema(entry)});}
+    entry.node.querySelector('.chart-volume-status')?.remove();if(!compact){const status=document.createElement('span');status.className='chart-volume-status';status.textContent=record.volume.some(p=>p.value>0)?L('成交量','VOLUME'):detail?L('來源未提供成交量','VOLUME NOT PROVIDED'):L('成交量載入中','VOLUME LOADING');entry.plot.append(status);}
     if(entry.caption)entry.caption.innerHTML=`${record.stale?L('快取 · ','CACHED · '):''}Yahoo Finance · ${safe(record.granularity)} · ${safe(record.sessionDate||'')} ${safe(timeLabel(record.time))} HKT · ${L('可延遲','MAY BE DELAYED')}`;
     resizeChart(entry);
   }
@@ -156,14 +199,14 @@ window.InfoDeskCharts = (() => {
   }
   function focusTick(){const now=Date.now();if(document.hidden||now-lastFocus<8000)return;lastFocus=now;const symbols=preferredWatchlist();document.querySelectorAll('[data-chart-focus-rotate]').forEach(node=>{if(!mountedVisible(node)||!symbols.length)return;destroyWithin(node);node.innerHTML=shell(symbols[focusCursor%symbols.length],'focus');node.animate?.([{transform:'translateX(4%)',clipPath:'inset(0 0 0 100%)'},{transform:'translateX(0)',clipPath:'inset(0 0 0 0)'}],{duration:300,easing:'cubic-bezier(.2,.7,.2,1)'});scan(node)});focusCursor++;}
   function init(){
-    document.addEventListener('click',event=>{if(event.target.closest('button,a')||window.InfoDeskTV?.enabled())return;const target=event.target.closest('[data-symbol],[data-chart-symbol]');if(target)open(target.dataset.symbol||target.dataset.chartSymbol);});
+    document.addEventListener('click',event=>{if(event.target.closest('button,a,#chartModal')||window.InfoDeskTV?.enabled())return;const target=event.target.closest('[data-symbol],[data-chart-symbol]');if(target)open(target.dataset.symbol||target.dataset.chartSymbol);});
     document.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){const symbol=event.target?.dataset?.symbol;if(symbol){event.preventDefault();open(symbol);}}});
     let queued=false;observer=new MutationObserver(list=>{if(queued||!list.some(m=>m.target.closest?.('.stage-deck,#tvMain,#hkMarket,#usMarket,#railIndices')&&!m.target.closest?.('.chart-card')))return;queued=true;requestAnimationFrame(()=>{queued=false;scan(document);});});observer.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['class','hidden']});
     document.addEventListener('infodesk:language',()=>{for(const entry of mounted.values()){entry.dataKey=null;render(entry)}if(modal?.open)setModalRange(modal.dataset.range)});
     document.addEventListener('infodesk:tv',()=>{if(modal?.open)modal.close();for(const entry of mounted.values())clearChart(entry);mounted.clear();scan(document);});
     document.addEventListener('visibilitychange',()=>{if(!document.hidden){scan(document);refreshVisible()}});window.addEventListener('resize',()=>scan(document));
-    scan(document);refreshVisible();timer=setInterval(()=>{refreshVisible();scan(document)},PERIOD);setInterval(focusTick,1000);
+    scan(document);refreshVisible();timer=setInterval(()=>{refreshVisible();scan(document)},PERIOD);setInterval(focusTick,1000);setInterval(detailTick,1000);
   }
   document.addEventListener('DOMContentLoaded',init);
-  return {mount,scan,hydrate:scan,destroyWithin,refreshVisible,open,parseSeries,parseResponse,publicError,plotSize,targetURL,widgetSymbol,markup:shell,sparkHTML:(symbol,options={})=>shell(symbol,'spark',options),indicesHTML,indexMarkup:indicesHTML,focusHTML:(symbol,options={})=>shell(symbol,'focus',options),focusMarkup:symbol=>shell(symbol,'focus'),preferredWatchlist,timeLabel,axisHTML,inspect:()=>({mounted:mounted.size,inflight:inflight.size,batch:BATCH,stagger:STAGGER,period:PERIOD,batches:[...batchDiagnostics.values()].map(r=>({...r,symbols:[...r.symbols],missing:[...r.missing]})),records:[...records.values()].map(({points,...r})=>({...r,points:points.length})),failures:[...failureUntil.keys()]})};
+  return {mount,scan,hydrate:scan,destroyWithin,refreshVisible,open,parseSeries,parseResponse,publicError,plotSize,targetURL,detailURL,segmentsFor,axisTimes,chartTimeline,widgetSymbol,markup:shell,sparkHTML:(symbol,options={})=>shell(symbol,'spark',options),indicesHTML,indexMarkup:indicesHTML,focusHTML:(symbol,options={})=>shell(symbol,'focus',options),focusMarkup:symbol=>shell(symbol,'focus'),preferredWatchlist,timeLabel,axisHTML,inspect:()=>({mounted:mounted.size,inflight:inflight.size,batch:BATCH,stagger:STAGGER,period:PERIOD,details:[...details.values()].map(({points,volume,...r})=>({...r,points:points.length,volume:volume.length})),detailRequestsLastMinute:detailTimes.length,batches:[...batchDiagnostics.values()].map(r=>({...r,symbols:[...r.symbols],missing:[...r.missing]})),records:[...records.values()].map(({points,volume,...r})=>({...r,points:points.length,volume:volume.length})),failures:[...failureUntil.keys()]})};
 })();
