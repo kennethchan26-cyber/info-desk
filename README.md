@@ -4,7 +4,7 @@
 
 ## 發佈檔案
 
-只上載以下 14 個檔案，不要拖入整個工作資料夾、設定截圖、測試輸出、憑證或瀏覽器資料。
+只上載以下 15 個檔案，不要拖入整個工作資料夾、設定截圖、測試輸出、憑證或瀏覽器資料。
 
 | 檔案 | 用途 |
 | --- | --- |
@@ -22,6 +22,18 @@
 | README.md | 本說明 |
 | market-calendar.js | 2026／2027 港交所及 NYSE 交易日曆、時區及倒數 |
 | broadcast.js | 電視台式輪播、側欄、新聞條及本頁觀測線（不另取數據） |
+| signals.js | 香港熱搜 RSS、Coinbase 公開 WebSocket、重連及新熱搜提示 |
+
+## 橙色版新增項目
+
+- 自選美股 15 隻：AAPL、MSFT、NVDA、TSLA、AMZN、GOOGL、META、AVGO、AMD、TSM、NFLX、JPM、BRK.B、COST、PLTR。BRK.B 對應 Yahoo 代號 BRK-B。
+- Yahoo Spark 批量 endpoint 每次最多 20 個代號（超過會回傳 Bad Request）。港股 7 項＋美股 18 項＝25 項，每 60 秒分兩批讀取；不以逐股重試擴大請求量。網頁仍經原有 Jina Reader，擴充功能直接讀 Yahoo。免費非合約行情介面可能變動、限流或延遲，批量並不保證即時或永不限流。
+- [香港熱搜 RSS](https://trends.google.com/trending/rss?geo=HK) 每 15 分鐘更新，依 RSS 原順序顯示首 10 位，並非按搜尋量自行排名。搜尋量為 Google 概約值；新聞連結取自同一 RSS。沿用 Jina Reader，使用 browser/text 模式保留 Google RSS 的附加欄位。讀取失敗只影響熱搜。首次成功不提示；之後只有新出現且位列前 3 位的字眼會提示。
+- Threads 使用官方 HTTPS Universal Link：已安裝 App 時由手機系統決定是否開啟 App，否則開網頁；不讀 Threads 資料。實際開啟行為受 Safari、安裝狀態及用戶預設影響。
+- BTC-USD、ETH-USD、SOL-USD 使用 [Coinbase Exchange 公開 ticker 串流](https://docs.cdp.coinbase.com/exchange/websocket-feed/channels)，不需要 key 或登入；升跌為 24 小時，不是股票的即日升跌。每筆行情更新主板、側欄及跑馬燈；跑馬燈不會因每筆價格重設捲動位置。
+- WebSocket 斷線顯示「重新連線中」，採用約 1、2、4 秒遞增至 30 秒的重試等待（另加少量隨機延遲）。Heartbeat 超過 20 秒沒有資料亦會重連；關頁會停止，恢復網絡會重連。手機鎖屏或背景可能暫停，不保證背景即時更新。
+- 指數、自選股、外匯及加密貨幣改動時，格子及價格紅／綠閃動 0.5 秒再恢復白字；首次資料不閃。外匯仍是每日參考價，沒有變動時不會製造假跳動。
+- 主板新增加密貨幣及熱搜兩頁；手機熱搜在新聞之前。全版使用橙／琥珀色，升跌保持紅綠，突發橫額仍為紅色。Gmail、交通、交易日曆及原有新聞設定未更改。
 
 ## 電視台式版面
 
@@ -112,10 +124,12 @@
 | 680 | 九巴及城巴 ETA | 分別查詢合併；沒有某公司班次不等於 API 失敗 |
 | 30X | 城巴 ETA | 預計到站，可能不足 3 班 |
 | Gmail | Gmail API | 唯讀、每 5 分鐘查詢 |
-| 港股／美股 | Yahoo Finance chart；網頁經 Jina Reader | 報價及快照可延遲，列明日期時間，非交易用途 |
+| 港股／美股 | Yahoo Finance spark 批量報價；網頁經 Jina Reader | 每批最多 20 個代號；現有 25 項每次分 2 批。報價及快照可延遲，非交易用途 |
 | 外匯 | Frankfurter／歐洲央行 | 每日參考價，不是銀行即時買賣價 |
 | 香港新聞 | 港台本地分類，經 Jina Reader | 原文發布時間排序，快照可快取 |
 | 國際／財經 | 港台國際及財經分類，經 Jina Reader | 合併去重、由新到舊；部分來源失敗會標示 |
+| 香港熱搜 | Google Trends 香港 RSS，經 Jina Reader | 每 15 分鐘查詢，首 10 個字眼及概約搜尋量；並非逐秒排行 |
+| BTC／ETH／SOL | Coinbase Exchange 公開 WebSocket ticker | 美元成交價即時串流；升跌百分比以 24 小時開盤價計算，並非全市場綜合價 |
 
 Jina Reader 只收到公開市場／新聞網址，會如一般網站收到連線 IP，不會收到 Gmail 權杖或郵件。免費公開服務可快取、限流或暫停；若停用，須另選容許跨域的來源。本程式不會自動傳送私人資料到其他代理。
 

@@ -28,8 +28,8 @@ const readerQueue=[];let readerActive=0;
 function drainReader(){
   while(readerActive<3&&readerQueue.length){const task=readerQueue.shift();readerActive++;task().finally(()=>{readerActive--;drainReader()})}
 }
-function fetchJinaText(url,timeout=18000){
-  return new Promise((resolve,reject)=>{readerQueue.push(async()=>{const ctl=new AbortController();const timer=setTimeout(()=>ctl.abort(),timeout);try{const r=await fetch(url,{cache:"no-store",credentials:"omit",referrerPolicy:"no-referrer",signal:ctl.signal});if(!r.ok)throw new Error(`公開資料轉讀 HTTP ${r.status}`);resolve(await r.text())}catch(e){reject(e)}finally{clearTimeout(timer)}});drainReader()});
+function fetchJinaText(url,timeout=18000,headers={}){
+  return new Promise((resolve,reject)=>{readerQueue.push(async()=>{const ctl=new AbortController();const timer=setTimeout(()=>ctl.abort(),timeout);try{const r=await fetch(url,{cache:"no-store",credentials:"omit",referrerPolicy:"no-referrer",headers,signal:ctl.signal});if(!r.ok)throw new Error(`公開資料轉讀 HTTP ${r.status}`);resolve(await r.text())}catch(e){reject(e)}finally{clearTimeout(timer)}});drainReader()});
 }
 
 function previous(key){return baselines.has(key)?baselines.get(key):null;}
@@ -108,20 +108,32 @@ async function loadFx(){
   try{let j;try{j=await getJSON("https://api.frankfurter.app/latest?from=HKD&to=USD,CNY,JPY,GBP,EUR,AUD,CAD,SGD")}catch{j=await getJSON("https://api.frankfurter.dev/v1/latest?base=HKD&symbols=USD,CNY,JPY,GBP,EUR,AUD,CAD,SGD")}const names={USD:"美元",CNY:"人民幣",JPY:"日圓",GBP:"英鎊",EUR:"歐元",AUD:"澳元",CAD:"加元",SGD:"新加坡元"};$("#fx").innerHTML=`<div class="fx-grid">${Object.entries(names).map(([code,name])=>`<div class="fx"><div class="fx-code">1 HKD → ${esc(name)} ${code}</div><div class="fx-rate">${j.rates?.[code]!=null?Number(j.rates[code]).toFixed(code==="JPY"?3:4):"—"}</div></div>`).join("")}</div><div class="fx-note">參考日期：${esc(j.date?j.date.split("-").reverse().join("/"):"—")}；屬每日參考匯率，並非銀行即時兌換價。</div>`;setStamp("#fxUpdated")}catch{$("#fx").innerHTML='<div class="error">暫時未能取得數據</div>'}
 }
 
-function parseJinaJSON(text){const marker="Markdown Content:";let raw=text.includes(marker)?text.slice(text.indexOf(marker)+marker.length):text;const start=raw.indexOf('{"chart"');const end=raw.lastIndexOf("}");if(start<0||end<start)throw new Error("invalid market response");return JSON.parse(raw.slice(start,end+1).replace(/\r?\n\s*/g,""))}
-async function fetchQuote(item){
-  const target=`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(item.yahoo)}?range=1d&interval=1d`;
-  let data;if(IS_EXTENSION)data=await getJSON(target);else{data=parseJinaJSON(await fetchJinaText("https://r.jina.ai/http://query1.finance.yahoo.com/v8/finance/chart/"+encodeURIComponent(item.yahoo)+"?range=1d%26interval=1d"))}
-  const meta=data.chart?.result?.[0]?.meta;if(!meta)throw new Error("no quote");const price=Number(meta.regularMarketPrice);if(!Number.isFinite(price))throw new Error("invalid price");let pct=Number(meta.regularMarketChangePercent);if(!Number.isFinite(pct)){const prev=Number(meta.chartPreviousClose||meta.previousClose);pct=prev?(price-prev)/prev*100:0}return{...item,price,pct,time:meta.regularMarketTime?new Date(meta.regularMarketTime*1000):null};
+function parseJinaJSON(text){const marker="Markdown Content:";const raw=text.includes(marker)?text.slice(text.indexOf(marker)+marker.length):text;const start=raw.indexOf("{"),end=raw.lastIndexOf("}");if(start<0||end<start)throw new Error("invalid market response");return JSON.parse(raw.slice(start,end+1).replace(/\r?\n\s*/g,""))}
+function quoteFromMeta(item,meta){if(!meta)throw new Error("no quote");const price=Number(meta.regularMarketPrice);if(!Number.isFinite(price)||price<=0)throw new Error("invalid price");let pct=meta.regularMarketChangePercent==null?NaN:Number(meta.regularMarketChangePercent);if(!Number.isFinite(pct)){const prev=Number(meta.chartPreviousClose||meta.previousClose);if(!prev)throw new Error("no quote");pct=(price-prev)/prev*100}return{...item,price,pct,time:meta.regularMarketTime?new Date(meta.regularMarketTime*1000):null}}
+async function fetchQuoteBatch(items){
+  const unique=[...new Set(items.map(x=>x.yahoo))],size=Math.max(1,Math.min(20,Number(CFG.MARKET_BATCH_SIZE)||20)),chunks=[];
+  for(let i=0;i<unique.length;i+=size)chunks.push(unique.slice(i,i+size));
+  const map=new Map();
+  await Promise.all(chunks.map(async symbols=>{
+    try{
+      const query="symbols="+encodeURIComponent(symbols.join(","))+"&range=1d&interval=1d";
+      const target="https://query1.finance.yahoo.com/v7/finance/spark?"+query;
+      const data=IS_EXTENSION?await getJSON(target):parseJinaJSON(await fetchJinaText("https://r.jina.ai/http://query1.finance.yahoo.com/v7/finance/spark?"+query.replaceAll("&","%26")));
+      if(data.spark?.error)throw new Error(data.spark.error.description||"no quote");
+      const rows=new Map((data.spark?.result||[]).map(r=>[r.symbol,r.response?.[0]?.meta]));
+      for(const symbol of symbols){try{const q=quoteFromMeta({yahoo:symbol},rows.get(symbol));map.set(symbol,{status:"fulfilled",value:q})}catch(reason){map.set(symbol,{status:"rejected",reason})}}
+    }catch(reason){for(const symbol of symbols)map.set(symbol,{status:"rejected",reason})}
+  }));
+  return map;
 }
 function quoteHTML(q){const cls=q.pct>0?"up":q.pct<0?"down":"flat";const sign=q.pct>0?"+":"";return`<div class="quote" data-delta="${q.pct!==-100?q.price*q.pct/(100+q.pct):0}"><div><div class="quote-name">${esc(q.name)}</div><div class="quote-price">${q.price.toLocaleString("en-HK",{maximumFractionDigits:2})}</div></div><div class="quote-change ${cls}">${sign}${q.pct.toFixed(2)}%</div><div class="quote-time">${q.time?hkDateTime(q.time):"來源未提供時間"} HKT · Yahoo Finance${IS_EXTENSION?"":"／Jina 快照"}</div></div>`}
 function publicDataError(error){if(error?.name==="AbortError")return "連線逾時，下次更新重試";const message=String(error?.message||"");if(message.includes("429"))return "公開服務限流，下次更新重試";if(/invalid market response|no quote|invalid price/.test(message))return "來源回應沒有有效報價";return "公開來源暫時無法讀取，下次更新重試"}
-async function loadMarket(items,target,stamp){
-  const settled=await Promise.allSettled(items.map(fetchQuote));const good=settled.filter(x=>x.status==="fulfilled").map(x=>x.value);$(target).innerHTML=settled.map((x,i)=>x.status==="fulfilled"?quoteHTML(x.value):`<div class="quote"><div class="quote-name">${esc(items[i].name)}</div><div class="quote-error">暫時未能取得數據</div><div class="quote-time">${esc(publicDataError(x.reason))}</div></div>`).join("");
+async function loadMarket(items,target,stamp,batch=null){
+  batch=batch||await fetchQuoteBatch(items);const settled=items.map(item=>{const x=batch.get(item.yahoo);return x?.status==="fulfilled"?{status:"fulfilled",value:{...item,...x.value}}:{status:"rejected",reason:x?.reason||new Error("no quote")}});const good=settled.filter(x=>x.status==="fulfilled").map(x=>x.value);$(target).innerHTML=settled.map((x,i)=>x.status==="fulfilled"?quoteHTML(x.value):`<div class="quote"><div class="quote-name">${esc(items[i].name)}</div><div class="quote-error">暫時未能取得數據</div><div class="quote-time">${esc(publicDataError(x.reason))}</div></div>`).join("");
   for(const q of good){if(q.alertIndex){state.indices[q.alertIndex]={price:q.price.toLocaleString("en-HK",{maximumFractionDigits:2}),change:`${q.pct>0?"+":""}${q.pct.toFixed(2)}%`};const over=Math.abs(q.pct)>2?`${q.pct>0?"up":"down"}:${q.pct.toFixed(1)}`:"normal";const key=`market_${q.alertIndex}`;const old=previous(key);remember(key,over);if(old!==null&&over!=="normal"&&!old.startsWith(over.split(":")[0]))enqueueAlert("市場異動",`${q.name} 單日${q.pct>0?"上升":"下跌"} ${Math.abs(q.pct).toFixed(2)}%`,4)}}
   updateTicker();if(good.length)setStamp(stamp);
 }
-async function loadMarkets(){await Promise.allSettled([loadMarket(CFG.HK_MARKET,"#hkMarket","#hkMarketUpdated"),loadMarket(CFG.US_MARKET,"#usMarket","#usMarketUpdated")])}
+async function loadMarkets(){const batch=await fetchQuoteBatch([...CFG.HK_MARKET,...CFG.US_MARKET]);await Promise.allSettled([loadMarket(CFG.HK_MARKET,"#hkMarket","#hkMarketUpdated",batch),loadMarket(CFG.US_MARKET,"#usMarket","#usMarketUpdated",batch)])}
 
 function parseReaderMarkdown(text){
   const matches=[...text.matchAll(/\[([^\]\n]{5,180})\]\((https?:\/\/[^\s)]+)\)/g)], rows=[],seen=new Set();

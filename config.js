@@ -25,8 +25,31 @@ window.DASHBOARD_CONFIG = {
     { yahoo: "AAPL", tv: "NASDAQ:AAPL", name: "AAPL" },
     { yahoo: "MSFT", tv: "NASDAQ:MSFT", name: "MSFT" },
     { yahoo: "NVDA", tv: "NASDAQ:NVDA", name: "NVDA" },
-    { yahoo: "TSLA", tv: "NASDAQ:TSLA", name: "TSLA" }
+    { yahoo: "TSLA", tv: "NASDAQ:TSLA", name: "TSLA" },
+    { yahoo: "AMZN", name: "AMZN" },
+    { yahoo: "GOOGL", name: "GOOGL" },
+    { yahoo: "META", name: "META" },
+    { yahoo: "AVGO", name: "AVGO" },
+    { yahoo: "AMD", name: "AMD" },
+    { yahoo: "TSM", name: "TSM" },
+    { yahoo: "NFLX", name: "NFLX" },
+    { yahoo: "JPM", name: "JPM" },
+    { yahoo: "BRK-B", name: "BRK.B" },
+    { yahoo: "COST", name: "COST" },
+    { yahoo: "PLTR", name: "PLTR" }
   ],
+
+  // Yahoo Spark 每批最多 20 個代號；25 項港美股合計每分鐘兩批。
+  MARKET_BATCH_SIZE: 20,
+  TRENDS: { RSS: "https://trends.google.com/trending/rss?geo=HK", INTERVAL_MS: 900000, LIMIT: 10 },
+  CRYPTO: {
+    WS_URL: "wss://ws-feed.exchange.coinbase.com",
+    PRODUCTS: [
+      { id: "BTC-USD", symbol: "BTC", name: "比特幣" },
+      { id: "ETH-USD", symbol: "ETH", name: "以太幣" },
+      { id: "SOL-USD", symbol: "SOL", name: "Solana" }
+    ]
+  },
 
   /* 已按官方路線及站點列表核實（2026-10-21）。
      680 城巴把九巴 ST534 同一位置命名為「歷奇單車場, 小瀝源路」。 */
