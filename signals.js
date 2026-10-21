@@ -2,7 +2,8 @@
 // Public-only data: no cookies, Gmail tokens, private messages or API keys.
 window.InfoDeskSignals = (() => {
   const cryptoQuotes=new Map();
-  let trends=[],trendsBusy=false,trendBaseline=null,feed=null;
+  let trends=[],trendsBusy=false,trendBaseline=null,feed=null,expanded=false,statusCode='paused';
+  const text=v=>window.InfoDeskI18n?.t(v)??v;
   const safeURL=value=>{try{const u=new URL(String(value));return /^https?:$/.test(u.protocol)?u.href:null}catch{return null}};
   function parseTrends(text){
     const start=text.indexOf('<rss'),end=text.lastIndexOf('</rss>');
@@ -22,14 +23,18 @@ window.InfoDeskSignals = (() => {
     }
     if(!rows.length)throw new Error('沒有熱搜資料');return rows;
   }
-  function trendAlerts(rows){const current=new Set(rows.map(x=>x.title));if(trendBaseline!==null)rows.slice(0,3).filter(x=>!trendBaseline.has(x.title)).forEach((x,i)=>enqueueAlert('香港熱搜',x.title+' · 新上榜熱搜',5));trendBaseline=current;}
+  function trendAlerts(rows){const current=new Set(rows.map(x=>x.title));if(trendBaseline!==null)rows.slice(0,3).filter(x=>!trendBaseline.has(x.title)).forEach(x=>enqueueAlert(text('香港熱搜'),x.title+' · '+text('新上榜熱搜'),5));trendBaseline=current;}
+  function renderTrends(){
+    if(!trends.length)return;
+    $('#trends').innerHTML=trends.map((x,i)=>`<article class="trend-row"><b class="trend-rank">${String(i+1).padStart(2,'0')}</b><div><a class="trend-term" href="${esc(x.link)}" target="_blank" rel="noopener noreferrer">${esc(x.title)}</a><span class="trend-volume">${x.traffic?esc(x.traffic)+' '+text('次搜尋'):text('搜尋量未提供')}</span><div class="trend-articles">${x.articles.length?x.articles.map(a=>`<a href="${esc(a.link)}" target="_blank" rel="noopener noreferrer">${esc(a.title)} <small>${esc(a.source)}</small></a>`).join(''):`<a href="${esc(x.link)}" target="_blank" rel="noopener noreferrer">${text('查看相關新聞 ↗')}</a>`}</div></div></article>`).join('');
+  }
   async function loadTrends(){
     if(trendsBusy)return;trendsBusy=true;
     try{
       // Same Jina Reader as news, but preserve Google-specific RSS namespace fields.
       const text=await fetchJinaText('https://r.jina.ai/'+CFG.TRENDS.RSS,25000,{'X-Engine':'browser','X-Respond-With':'text','X-No-Cache':'true'});
       const rows=parseTrends(text);trends=rows;trendAlerts(rows);
-      $('#trends').innerHTML=rows.map((x,i)=>`<article class="trend-row"><b class="trend-rank">${String(i+1).padStart(2,'0')}</b><div><a class="trend-term" href="${esc(x.link)}" target="_blank" rel="noopener noreferrer">${esc(x.title)}</a><span class="trend-volume">${x.traffic?esc(x.traffic)+' 次搜尋':'搜尋量未提供'}</span><div class="trend-articles">${x.articles.length?x.articles.map(a=>`<a href="${esc(a.link)}" target="_blank" rel="noopener noreferrer">${esc(a.title)} <small>${esc(a.source)}</small></a>`).join(''):`<a href="${esc(x.link)}" target="_blank" rel="noopener noreferrer">查看相關新聞 ↗</a>`}</div></div></article>`).join('');
+      renderTrends();
       setStamp('#trendsUpdated');
     }catch{$('#trends').innerHTML='<div class="error">暫時未能取得數據</div>';trends=[]}finally{trendsBusy=false}
   }
@@ -53,26 +58,29 @@ window.InfoDeskSignals = (() => {
     }
     return {start(){if(!stopped)return;stopped=false;connect()},stop(){stopped=true;generation++;cancel(retry);retry=null;dispose()},restart(){this.stop();attempt=0;this.start()}};
   }
-  function status(code){const labels={connecting:'連線中',reconnecting:'重新連線中',live:'即時串流 · USD'};document.querySelectorAll('[data-crypto-status]').forEach(e=>{e.textContent=labels[code]||code;e.dataset.state=code});document.querySelectorAll('.crypto-stage,.rail-crypto').forEach(e=>e.classList.toggle('stale',code!=='live'));}
+  function status(code){statusCode=code;const labels={paused:'已暫停連線',connecting:'連線中',reconnecting:'重新連線中',live:'即時串流 · USD'};document.querySelectorAll('[data-crypto-status]').forEach(e=>{e.textContent=text(labels[code]||code);e.dataset.state=code});document.querySelectorAll('.crypto-panel').forEach(e=>e.classList.toggle('stale',code!=='live'));}
   function updateCrypto(q){const product=CFG.CRYPTO.PRODUCTS.find(p=>p.id===q.id);if(!product)return;cryptoQuotes.set(q.id,{...product,...q});
     document.querySelectorAll('[data-crypto-id="'+q.id+'"]').forEach(node=>{
       node.querySelector('.crypto-price').textContent=q.price.toLocaleString('en-HK',{minimumFractionDigits:2,maximumFractionDigits:2});
-      const pct=node.querySelector('.crypto-change');pct.textContent=q.pct===null?'24 小時升跌未提供':`${q.pct>=0?'▲':'▼'} ${Math.abs(q.pct).toFixed(2)}%`;
+      const pct=node.querySelector('.crypto-change');pct.textContent=q.pct===null?text('24 小時升跌未提供'):`${q.pct>=0?'▲':'▼'} ${Math.abs(q.pct).toFixed(2)}%`;
       pct.className='crypto-change '+(q.pct>0?'up':q.pct<0?'down':'flat');node.querySelector('.crypto-time').textContent=hkTime(q.time)+' HKT';
       window.InfoDeskView?.flash(node,'crypto:'+node.dataset.view+':'+q.id,q.price);
     });
     $('#cryptoUpdated').textContent=hkTime(q.time)+' HKT';
-    window.InfoDeskView?.updateCryptoTicker(cryptoQuotes.get(q.id));
   }
-  function cryptoHTML(p,view){return `<div class="crypto-quote" data-crypto-id="${esc(p.id)}" data-view="${view}"><div class="crypto-name"><b>${esc(p.symbol)}</b><span>${esc(p.name)}</span></div><div class="crypto-currency">USD</div><strong class="crypto-price">—</strong><div class="crypto-change flat">等待首筆成交</div><div class="crypto-time">—</div></div>`;}
+  function cryptoHTML(p,view){return `<div class="crypto-quote" data-crypto-id="${esc(p.id)}" data-view="${view}"><div class="crypto-name"><b>${esc(p.symbol)}</b><span>${esc(text(p.name))}</span></div><div class="crypto-currency">USD</div><strong class="crypto-price">—</strong><div class="crypto-change flat">${text('等待首筆成交')}</div><div class="crypto-time">—</div></div>`;}
+  function setExpanded(open,persist=true){expanded=Boolean(open);$('#cryptoToggle').setAttribute('aria-expanded',String(expanded));$('#cryptoContent').hidden=!expanded;if(persist)try{localStorage.setItem('dashboard_crypto_open',String(expanded))}catch{}if(expanded)feed?.start();else{feed?.stop();status('paused')}}
   function init(){
-    $('#cryptoMain').innerHTML=CFG.CRYPTO.PRODUCTS.map(p=>cryptoHTML(p,'main')).join('');$('#cryptoRail').innerHTML=CFG.CRYPTO.PRODUCTS.map(p=>cryptoHTML(p,'rail')).join('');
-    feed=createCryptoFeed({url:CFG.CRYPTO.WS_URL,products:CFG.CRYPTO.PRODUCTS.map(p=>p.id),onQuote:updateCrypto,onStatus:status});feed.start();
-    window.addEventListener('pagehide',()=>feed.stop());window.addEventListener('pageshow',()=>feed.start());window.addEventListener('online',()=>feed.restart());
+    $('#cryptoMain').innerHTML=CFG.CRYPTO.PRODUCTS.map(p=>cryptoHTML(p,'main')).join('');
+    feed=createCryptoFeed({url:CFG.CRYPTO.WS_URL,products:CFG.CRYPTO.PRODUCTS.map(p=>p.id),onQuote:updateCrypto,onStatus:status});
+    let saved=false;try{saved=localStorage.getItem('dashboard_crypto_open')==='true'}catch{}setExpanded(saved,false);
+    $('#cryptoToggle').addEventListener('click',()=>setExpanded(!expanded));
+    window.addEventListener('pagehide',()=>feed.stop());window.addEventListener('pageshow',()=>{if(expanded)feed.start()});window.addEventListener('online',()=>{if(expanded)feed.restart()});
+    document.addEventListener('infodesk:language',()=>{renderTrends();$('#cryptoMain').innerHTML=CFG.CRYPTO.PRODUCTS.map(p=>cryptoHTML(p,'main')).join('');cryptoQuotes.forEach(updateCrypto);status(statusCode)});
     loadTrends();setInterval(loadTrends,CFG.TRENDS.INTERVAL_MS);
     // HTTPS Universal Link lets iOS/Android open the installed Threads app; otherwise opens the web.
     $('#threadsOpen').href='https://www.threads.com/';
   }
   document.addEventListener('DOMContentLoaded',init);
-  return {parseTrends,trendAlerts,loadTrends,createCryptoFeed,updateCrypto,getTrends:()=>trends,getCrypto:()=>[...cryptoQuotes.values()]};
+  return {parseTrends,trendAlerts,loadTrends,createCryptoFeed,updateCrypto,setExpanded,getTrends:()=>trends,getCrypto:()=>[...cryptoQuotes.values()]};
 })();

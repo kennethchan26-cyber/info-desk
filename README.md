@@ -1,10 +1,10 @@
 # INFO//DESK 個人資訊看板
 
-繁體中文、香港時間、日/月/年。相同 HTML/CSS/JavaScript 同時支援 GitHub Pages 純靜態網頁及 Chrome Manifest V3 新分頁擴充功能。不需要本機代理或後端。
+中／EN 即時切換並記住選擇，預設繁體中文。中文日/月/年，英文例如 21 Oct 2026，均用香港 24 小時制。相同 HTML/CSS/JavaScript 同時支援 GitHub Pages 純靜態網頁及 Chrome Manifest V3 新分頁擴充功能。不需要本機代理或後端。
 
 ## 發佈檔案
 
-只上載以下 15 個檔案，不要拖入整個工作資料夾、設定截圖、測試輸出、憑證或瀏覽器資料。
+只上載以下 17 個檔案，不要拖入整個工作資料夾、設定截圖、測試輸出、憑證或瀏覽器資料。
 
 | 檔案 | 用途 |
 | --- | --- |
@@ -23,17 +23,29 @@
 | market-calendar.js | 2026／2027 港交所及 NYSE 交易日曆、時區及倒數 |
 | broadcast.js | 電視台式輪播、側欄、新聞條及本頁觀測線（不另取數據） |
 | signals.js | 香港熱搜 RSS、Coinbase 公開 WebSocket、重連及新熱搜提示 |
+| i18n.js | 中英介面切換、日期格式及偏好記憶 |
+| forex.js | 外幣兌港元換算、前一參考日升跌及批量查詢 |
 
-## 橙色版新增項目
+## 雙語、外匯與可收起加密貨幣
+
+- 橙色名稱標籤配紫紅／紫藍背景、漸變外框；升跌仍用綠紅，突發仍為紅色。
+- 外匯合併為 13 種外幣兌港元：USD、CNY、JPY、GBP、EUR、AUD、CAD、SGD、TWD、KRW、THB、CHF、NZD。JPY／KRW 每 100 單位，其餘每 1 單位，顯示 4 位小數。
+- [Frankfurter v2](https://frankfurter.dev/) 每次一個批量請求讀取全部貨幣最近 21 日官方參考價，選最新兩個有效日期，以未四捨五入的倒數計算升跌。使用預設綜合市場中間參考價，不是銀行買賣牌價。每 60 秒檢查，但來源每日更新，升跌為前一參考日比較，不代表即時日內行情。畫面逐項列出參考日期；前一日缺資料不會假設零升跌。無 API key、無每日／每月配額，仍可能觸發反濫用限流。
+- 加密貨幣預設收起，只顯示標題及箭嘴；選擇存在本機瀏覽器。收起立即停止 WebSocket、心跳及重試，展開才連線；不出現在主畫面輪播或跑馬燈。手機放在新聞之後最底。
+- 天氣英文版直接使用天文台 lang=en；五條路線的英文目的地及站名已按營辦商官方路線／車站列表核對，列於 config.js 的 destinationEn／stopNameEn。ETA 備註使用 API 的英文欄位。
+- 英文新聞使用 [港台官方英文 RSS](https://news.rthk.hk/rthk/en/rss.htm)：[本地](https://rthk.hk/rthk/news/rss/e_expressnews_elocal.xml)、[國際](https://rthk.hk/rthk/news/rss/e_expressnews_einternational.xml)、[財經](https://rthk.hk/rthk/news/rss/e_expressnews_efinance.xml)。沿用 Jina Reader，英文 RSS 用 browser/markdown 模式並避開舊快取，保留標題、連結、原文時間。讀取失敗獨立顯示錯誤，不以中文新聞冒充英文新聞。
+- Gmail 寄件人／標題及香港熱搜字眼／相關文章維持原文，不翻譯個人內容。切換語言不觸發登入、也不把語言變化視為新消息。語言及展開偏好分別以 dashboard_language、dashboard_crypto_open 儲存在瀏覽器。
+
+## 保留的美股、熱搜及即時數字
 
 - 自選美股 15 隻：AAPL、MSFT、NVDA、TSLA、AMZN、GOOGL、META、AVGO、AMD、TSM、NFLX、JPM、BRK.B、COST、PLTR。BRK.B 對應 Yahoo 代號 BRK-B。
 - Yahoo Spark 批量 endpoint 每次最多 20 個代號（超過會回傳 Bad Request）。港股 7 項＋美股 18 項＝25 項，每 60 秒分兩批讀取；不以逐股重試擴大請求量。網頁仍經原有 Jina Reader，擴充功能直接讀 Yahoo。免費非合約行情介面可能變動、限流或延遲，批量並不保證即時或永不限流。
 - [香港熱搜 RSS](https://trends.google.com/trending/rss?geo=HK) 每 15 分鐘更新，依 RSS 原順序顯示首 10 位，並非按搜尋量自行排名。搜尋量為 Google 概約值；新聞連結取自同一 RSS。沿用 Jina Reader，使用 browser/text 模式保留 Google RSS 的附加欄位。讀取失敗只影響熱搜。首次成功不提示；之後只有新出現且位列前 3 位的字眼會提示。
 - Threads 使用官方 HTTPS Universal Link：已安裝 App 時由手機系統決定是否開啟 App，否則開網頁；不讀 Threads 資料。實際開啟行為受 Safari、安裝狀態及用戶預設影響。
-- BTC-USD、ETH-USD、SOL-USD 使用 [Coinbase Exchange 公開 ticker 串流](https://docs.cdp.coinbase.com/exchange/websocket-feed/channels)，不需要 key 或登入；升跌為 24 小時，不是股票的即日升跌。每筆行情更新主板、側欄及跑馬燈；跑馬燈不會因每筆價格重設捲動位置。
+- BTC-USD、ETH-USD、SOL-USD 使用 [Coinbase Exchange 公開 ticker 串流](https://docs.cdp.coinbase.com/exchange/websocket-feed/channels)，不需要 key 或登入；升跌為 24 小時，不是股票的即日升跌。每筆行情只更新已展開的加密貨幣板。
 - WebSocket 斷線顯示「重新連線中」，採用約 1、2、4 秒遞增至 30 秒的重試等待（另加少量隨機延遲）。Heartbeat 超過 20 秒沒有資料亦會重連；關頁會停止，恢復網絡會重連。手機鎖屏或背景可能暫停，不保證背景即時更新。
 - 指數、自選股、外匯及加密貨幣改動時，格子及價格紅／綠閃動 0.5 秒再恢復白字；首次資料不閃。外匯仍是每日參考價，沒有變動時不會製造假跳動。
-- 主板新增加密貨幣及熱搜兩頁；手機熱搜在新聞之前。全版使用橙／琥珀色，升跌保持紅綠，突發橫額仍為紅色。Gmail、交通、交易日曆及原有新聞設定未更改。
+- 主板共六頁：交易倒數、交通、天氣、自選股、熱搜、新聞。手機外匯在市場之後，熱搜在新聞之前，加密貨幣最後。Gmail 權限、交通班次、交易日曆及中文新聞來源未更改。
 
 ## 電視台式版面
 
@@ -125,7 +137,7 @@
 | 30X | 城巴 ETA | 預計到站，可能不足 3 班 |
 | Gmail | Gmail API | 唯讀、每 5 分鐘查詢 |
 | 港股／美股 | Yahoo Finance spark 批量報價；網頁經 Jina Reader | 每批最多 20 個代號；現有 25 項每次分 2 批。報價及快照可延遲，非交易用途 |
-| 外匯 | Frankfurter／歐洲央行 | 每日參考價，不是銀行即時買賣價 |
+| 外匯 | Frankfurter v2／多個中央銀行及官方來源 | 每日綜合市場中間參考價，較前一參考日，非銀行即時買賣價；每 60 秒查詢 |
 | 香港新聞 | 港台本地分類，經 Jina Reader | 原文發布時間排序，快照可快取 |
 | 國際／財經 | 港台國際及財經分類，經 Jina Reader | 合併去重、由新到舊；部分來源失敗會標示 |
 | 香港熱搜 | Google Trends 香港 RSS，經 Jina Reader | 每 15 分鐘查詢，首 10 個字眼及概約搜尋量；並非逐秒排行 |

@@ -8,66 +8,65 @@
 <title>INFO//DESK 個人資訊看板</title>
 <link rel="icon" href="icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png"><link rel="manifest" href="site.webmanifest">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&amp;family=Noto+Sans+TC:wght@500;700;900&amp;display=swap">
-<link rel="stylesheet" href="styles.css?v=20261021-orange2">
-<script src="config.js?v=20261021-orange2"></script><script src="market-calendar.js?v=20261021-orange2" defer></script><script src="app.js?v=20261021-orange2" defer></script><script src="broadcast.js?v=20261021-orange2" defer></script><script src="signals.js?v=20261021-orange2" defer></script>
+<link rel="stylesheet" href="styles.css?v=20261021-bilingual1">
+<script src="config.js?v=20261021-bilingual1"></script><script src="i18n.js?v=20261021-bilingual1" defer></script><script src="market-calendar.js?v=20261021-bilingual1" defer></script><script src="forex.js?v=20261021-bilingual1" defer></script><script src="app.js?v=20261021-bilingual1" defer></script><script src="broadcast.js?v=20261021-bilingual1" defer></script><script src="signals.js?v=20261021-bilingual1" defer></script>
 </head>
 <body>
 <header class="topbar">
 <div class="live-position"><b>LIVE</b><span id="liveLocation">香港</span></div>
 <div class="brand">INFO<span>//</span>DESK<small>YOUR WORLD. IN FOCUS.</small></div>
-<div class="header-actions"><label><input id="muteToggle" type="checkbox"> 靜音</label><label><input id="notifyToggle" type="checkbox"> 桌面通知</label><button id="testAlert" class="btn">測試提示</button></div>
+<div class="header-actions"><button id="languageToggle" class="btn language-toggle" type="button" aria-label="切換至英文"><span>中</span> / <span>EN</span></button><label><input id="muteToggle" type="checkbox"> 靜音</label><label><input id="notifyToggle" type="checkbox"> 桌面通知</label><button id="testAlert" class="btn">測試提示</button></div>
 <div class="status"><div id="clock">--:--:--</div><div><span id="date">--/--/----</span> <span class="timezone">HKT</span></div><div id="lastUpdate">最後更新：等待資料</div></div>
 </header>
 <main class="broadcast-layout">
 <div class="program-bar"><span>THE DAILY BRIEF</span><span id="rotationStatus">15 秒輪播 · 香港視角</span><button id="pauseRotation" class="text-button" aria-pressed="false">暫停輪播</button></div>
 <div class="stage-deck">
 <section class="panel stage active countdown-stage" data-stage="0" aria-label="開市與收市倒數">
-<div class="panel-head"><div><h1>下一個交易時刻</h1><p>MARKET COUNTDOWN <span>港股 × 美股</span></p></div><span class="head-marker">01 / 07</span></div>
+<div class="panel-head"><div><h1>下一個交易時刻</h1><p>MARKET COUNTDOWN <span>港股 × 美股</span></p></div><span class="head-marker">01 / 06</span></div>
 <div class="session-row"><div class="countdown-block" id="countdownHK"></div><div class="index-grid" id="hkIndexFocus"></div></div>
 <div class="session-row"><div class="countdown-block us" id="countdownUS"></div><div class="index-grid" id="usIndexFocus"></div></div>
 <div class="panel-bottom"><div class="source-tag"><b>HKEX / NYSE</b><small>2026–2027 交易日曆</small></div><p>港股按持續交易時段（不含收市競價）；不包含臨時停市。<br>美股自動換算紐約夏令時間。報價可能延遲。</p></div>
 </section>
 <section class="panel stage transit-stage" data-stage="1" aria-label="即時交通">
-<div class="panel-head"><div><h1>即時交通</h1><p>ON THE MOVE <span id="transitUpdated">每 30 秒</span></p></div><span class="head-marker">02 / 07</span></div>
+<div class="panel-head"><div><h1>即時交通</h1><p>ON THE MOVE <span id="transitUpdated">每 30 秒</span></p></div><span class="head-marker">02 / 06</span></div>
 <div class="next-bus" id="nextBus"><span>下一班車</span><b>正在讀取</b></div><div id="transit" class="panel-body"><div class="loading">正在取得到站時間…</div></div>
-<div class="panel-bottom"><div class="source-tag"><b>運輸署 / 九巴 / 城巴</b><small>官方預計到站時間</small></div><p>實際班次以營辦商為準 · 3 分鐘內橙色提示</p></div>
+<div class="panel-bottom"><div class="source-tag"><b>運輸署 / 九巴 / 城巴</b><small>官方預計到站時間</small></div><p>實際班次以營辦商為準 · 3 分鐘內紫紅色提示</p></div>
 </section>
 <section class="panel stage weather-stage" data-stage="2" aria-label="香港天氣">
-<div class="panel-head"><div><h1>香港天氣</h1><p>WEATHER WATCH <span id="weatherUpdated">每 60 秒</span></p></div><span class="head-marker">03 / 07</span></div><div id="weather" class="panel-body"><div class="loading">正在取得天文台資料…</div></div>
+<div class="panel-head"><div><h1>香港天氣</h1><p>WEATHER WATCH <span id="weatherUpdated">每 60 秒</span></p></div><span class="head-marker">03 / 06</span></div><div id="weather" class="panel-body"><div class="loading">正在取得天文台資料…</div></div>
 <div class="panel-bottom"><div class="source-tag"><b>香港天文台</b><small>準即時觀測 / 官方預報</small></div></div>
 </section>
 <section class="panel stage market-stage" data-stage="3" aria-label="市場焦點">
-<div class="panel-head"><div><h1>市場焦點</h1><p>WATCHLIST <span>即日升跌 · 本頁觀測線</span></p></div><span class="head-marker">04 / 07</span></div>
+<div class="panel-head"><div><h1>市場焦點</h1><p>WATCHLIST <span>即日升跌 · 本頁觀測線</span></p></div><span class="head-marker">04 / 06</span></div>
 <div class="market-section"><h2>香港 <span id="hkMarketUpdated">每 60 秒</span></h2><div id="hkMarket" class="market-list"><div class="loading">正在取得市場資料…</div></div></div>
 <div class="market-section"><h2>美國 <span id="usMarketUpdated">每 60 秒</span></h2><div id="usMarket" class="market-list"><div class="loading">正在取得市場資料…</div></div></div>
 <div class="panel-bottom"><div class="source-tag"><b>YAHOO FINANCE</b><small>網頁經 Jina Reader / 報價可延遲</small></div><p>線圖只記錄開頁後收到嘅報價，唔係完整日內走勢。</p></div>
 </section>
-<section class="panel stage crypto-stage" data-stage="4" aria-label="加密貨幣即時">
-<div class="panel-head"><div><h1>加密貨幣即時</h1><p>LIVE CRYPTO <span data-crypto-status>連線中</span></p></div><span class="head-marker">05 / 07</span></div>
-<div id="cryptoMain" class="crypto-main"></div><div class="panel-bottom"><div class="source-tag"><b>COINBASE EXCHANGE</b><small>公開成交串流 / 美元</small></div><p>24 小時升跌 · 每次成交更新<br>來源時間 <span id="cryptoUpdated">—</span></p></div>
-</section>
-<section class="panel stage trends-stage" data-stage="5" aria-label="香港熱搜">
+<section class="panel stage trends-stage" data-stage="4" aria-label="香港熱搜">
 <div class="panel-head"><div><h1>香港熱搜</h1><p>TRENDING IN HONG KONG <span id="trendsUpdated">每 15 分鐘</span></p></div><a id="threadsOpen" class="threads-button" href="https://www.threads.com/" target="_blank" rel="noopener noreferrer">Threads ↗</a></div>
 <div id="trends" class="trends-list"><div class="loading">正在取得香港熱搜…</div></div><div class="panel-bottom"><div class="source-tag"><b>GOOGLE TRENDS · HK</b><small>熱門搜尋 RSS / Jina Reader</small></div><p>依 RSS 順序 · 搜尋量為來源概約值<br>只提示新出現於前 3 位的字眼</p></div>
 </section>
-<section class="panel stage news-stage" data-stage="6" aria-label="頭條新聞">
-<div class="panel-head"><div><h1>頭條新聞</h1><p>THE BIG PICTURE <span>本地 / 國際 / 財經</span></p></div><span class="head-marker">07 / 07</span></div>
+<section class="panel stage news-stage" data-stage="5" aria-label="頭條新聞">
+<div class="panel-head"><div><h1>頭條新聞</h1><p>THE BIG PICTURE <span>本地 / 國際 / 財經</span></p></div><span class="head-marker">06 / 06</span></div>
 <div class="news-columns"><div><h2>香港 <span id="localNewsUpdated">每 60 秒</span></h2><div id="localNews"><div class="loading">正在取得新聞…</div></div></div><div><h2>國際及財經 <span id="worldNewsUpdated">每 60 秒</span></h2><div id="worldNews"><div class="loading">正在取得新聞…</div></div></div></div>
 <div class="panel-bottom"><div class="source-tag"><b>香港電台</b><small>公開新聞 / Jina Reader</small></div></div>
 </section>
-<nav class="stage-tabs" aria-label="主畫面切換"><button data-slide="0" aria-current="true">01 <span>市場時鐘</span></button><button data-slide="1">02 <span>交通</span></button><button data-slide="2">03 <span>天氣</span></button><button data-slide="3">04 <span>市場</span></button><button data-slide="4">05 <span>加密貨幣</span></button><button data-slide="5">06 <span>熱搜</span></button><button data-slide="6">07 <span>新聞</span></button></nav>
+<nav class="stage-tabs" aria-label="主畫面切換"><button data-slide="0" aria-current="true">01 <span>市場時鐘</span></button><button data-slide="1">02 <span>交通</span></button><button data-slide="2">03 <span>天氣</span></button><button data-slide="3">04 <span>市場</span></button><button data-slide="4">05 <span>熱搜</span></button><button data-slide="5">06 <span>新聞</span></button></nav>
 </div>
 <aside class="data-rail" aria-label="持續更新資料欄">
 <section class="panel rail-countdowns"><h2>交易時鐘 <small>HONG KONG TIME</small></h2><div class="mini-clocks"><div id="miniHK"></div><div id="miniUS"></div></div></section>
 <section class="panel rail-indices"><h2>主要指數 <small>即日</small></h2><div id="railIndices" class="rail-index-grid"></div></section>
-<section class="panel rail-crypto"><h2>加密貨幣 <small data-crypto-status>連線中</small></h2><div id="cryptoRail" class="crypto-rail"></div></section>
-<section class="panel fx-panel"><div class="white-heading"><h2>港元外匯</h2><span id="fxUpdated">每 60 秒</span></div><div id="fx" class="panel-body"><div class="loading">正在取得匯率…</div></div></section>
+<section class="panel fx-panel"><div class="white-heading"><h2>外匯</h2><span id="fxUpdated">每 60 秒</span></div><p class="fx-subtitle">市場中間價，非銀行買賣牌價</p><div id="fx" class="panel-body"><div class="loading">正在取得匯率…</div></div></section>
 <section class="panel rail-weather"><h2>香港天氣 <small>準即時</small></h2><div id="weatherCompact"></div></section>
 <section class="panel gmail-panel"><div class="white-heading"><h2>GMAIL <small>最新 10 封未讀</small></h2><span id="gmailUpdated">每 5 分鐘</span></div><div class="panel-body"><div class="gmail-toolbar"><button id="gmailAuth" class="btn primary">連接 Gmail（唯讀）</button><button id="gmailDisconnect" class="btn danger" hidden>中斷連接</button></div><div id="gmailHint" class="privacy-note">只申請 gmail.readonly；權杖只儲存在你的瀏覽器。</div><div class="mail-columns"><span>寄件人 / 標題</span><span>收件時間</span></div><div id="gmail"><div class="empty">尚未連接 Gmail</div></div></div></section>
 <section class="panel whatsapp-panel"><div class="wa-body"><div><h2>WHATSAPP <span id="waUnread">—</span><small> 未讀</small></h2><span id="waMode" class="privacy-note">網頁版</span></div><button id="waOpen" class="wa-button">開啟 WhatsApp ↗</button></div><div id="waNote" class="privacy-note">網頁版不會讀取 WhatsApp 資料。</div></section>
+<section class="panel crypto-panel" aria-label="加密貨幣">
+<button id="cryptoToggle" class="crypto-toggle" type="button" aria-expanded="false" aria-controls="cryptoContent"><span>加密貨幣</span><span class="disclosure-arrow" aria-hidden="true">›</span></button>
+<div id="cryptoContent" hidden><div class="crypto-status-line"><span data-crypto-status>已暫停連線</span><span id="cryptoUpdated">—</span></div><div id="cryptoMain" class="crypto-main"></div><div class="panel-bottom"><div class="source-tag"><b>COINBASE EXCHANGE</b><small>公開成交串流 / 美元</small></div><p>24 小時升跌 · 每次成交更新</p></div></div>
+</section>
 </aside>
 </main>
-<details class="utility"><summary>設定與數據來源 <span>版面版本更新：21/10/2026 17:08</span></summary><div id="runtimeInfo"></div><p>Gmail 仍只使用唯讀權限；公開 Client ID 及路線、自選股集中在 config.js。每個瀏覽器需各自登入。完整操作及來源：<a href="README.md" target="_blank" rel="noopener">README.md</a></p><p>交通 30 秒；天氣、股票、外匯、新聞 60 秒；Gmail 5 分鐘；熱搜 15 分鐘；加密貨幣公開 WebSocket 即時串流。外匯為每日參考價；市場及新聞可延遲，最後更新為成功讀取時間，並非來源即時。手機背景或關頁後不保證更新，沒有背景推播。</p><p>交易日曆至 2027 年底；不處理交易所臨時停市。<a href="https://www.nyse.com/trade/hours-calendars" target="_blank" rel="noopener">NYSE</a> / <a href="https://www.hkex.com.hk/News/HKEX-Calendar?sc_lang=en" target="_blank" rel="noopener">HKEX</a></p></details>
+<details class="utility"><summary>設定與數據來源 <span>版面版本更新：21/10/2026 17:55</span></summary><div id="runtimeInfo"></div><p>Gmail 仍只使用唯讀權限；公開 Client ID 及路線、自選股集中在 config.js。每個瀏覽器需各自登入。完整操作及來源：<a href="README.md" target="_blank" rel="noopener">README.md</a></p><p>交通 30 秒；天氣、股票、外匯、新聞 60 秒；Gmail 5 分鐘；熱搜 15 分鐘；加密貨幣只在展開時連接公開 WebSocket 串流。外匯為每日市場中間參考價，升跌較前一參考日；市場及新聞可延遲，最後更新為成功讀取時間，並非來源即時。手機背景或關頁後不保證更新，沒有背景推播。</p><p>交易日曆至 2027 年底；不處理交易所臨時停市。<a href="https://www.nyse.com/trade/hours-calendars" target="_blank" rel="noopener">NYSE</a> / <a href="https://www.hkex.com.hk/News/HKEX-Calendar?sc_lang=en" target="_blank" rel="noopener">HKEX</a></p></details>
 <div class="lower-third"><div class="program-bug"><b>INFO//DESK</b><span id="lowerCategory">香港</span></div><div id="lowerHeadline" class="lower-headline">你嘅世界，一眼掌握。</div></div>
 <div id="breaking" class="breaking" role="alert" aria-live="assertive" hidden><b class="breaking-badge">突發</b><span><small id="breakingType">最新</small><strong id="breakingText"></strong></span><button id="breakingClose" aria-label="關閉提示">×</button></div>
 <footer class="ticker-shell"><b class="ticker-label">MARKETS</b><div class="ticker-window"><div id="tickerTrack" class="ticker-track"><span>正在載入指數、自選股及外匯…</span></div></div></footer>
