@@ -15,4 +15,5 @@ button:focus-visible,input:focus-visible,a:focus-visible,summary:focus-visible{o
 .session-row{flex:1 0 205px}.focus-quote{padding:16px 10px 12px}.index-caption{margin-bottom:8px}.spark-pending{min-height:25px}.sparkline{height:28px;margin-top:6px}.quote-time{line-height:1.3}.focus-quote .quote-price{margin:8px 0 3px}
 @media(min-width:768px){.countdown-stage .panel-head{padding:14px 22px 10px}.countdown-stage h1{font-size:38px}.countdown-stage .panel-bottom{padding:8px 16px}.countdown-stage .source-tag{padding:5px 10px}}
 @media(max-width:767px){.session-row{flex:none}.focus-quote{padding:14px 8px}.index-grid{min-height:195px}}
+@media(min-width:768px){.transit-stage .panel-head{padding:12px 22px 10px}.transit-stage h1{font-size:34px}.transit-stage .next-bus{padding:10px 22px}.transit-stage .route-card{padding:6px 0}.transit-stage .route-no{font-size:40px}.transit-stage .operator{font-size:8px;margin-top:4px}.transit-stage .panel-bottom{padding:8px 16px}.transit-stage .source-tag{padding:5px 10px}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;scroll-behavior:auto!important}.ticker-window{overflow-x:auto}}
