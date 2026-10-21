@@ -104,6 +104,7 @@ function renderWeatherData([now,local,nine,warnings]){
 const minutesUntil=iso=>Math.max(0,Math.round((new Date(iso)-Date.now())/60000));
 const normEta=(iso,operator,remark="")=>iso?{mins:minutesUntil(iso),operator,remark,time:hkTime(iso),iso}:null;
 async function fetchTransit(item){
+  if(item.api==="kmb"){const j=await getJSON(`https://data.etabus.gov.hk/v1/transport/kmb/eta/${item.stopId}/${item.route}/${item.serviceType||'1'}`);return(j.data||[]).filter(x=>x.dir===item.direction).map(x=>normEta(x.eta,"九巴",(lang()==='en'?x.rmk_en:x.rmk_tc))).filter(Boolean)}
   if(item.api==="gmb"){const j=await getJSON(`https://data.etagmb.gov.hk/eta/route-stop/${item.routeId}/${item.routeSeq}/${item.stopSeq}`);return(j.data?.eta||[]).map(x=>({mins:Math.max(0,Number(x.diff)),operator:"小巴",remark:(lang()==='en'?x.remarks_en:x.remarks_tc)||"",time:hkTime(x.timestamp),iso:x.timestamp}))}
   if(item.api==="ctb"){const j=await getJSON(`https://rt.data.gov.hk/v2/transport/citybus/eta/CTB/${item.stopId}/${item.route}`);return(j.data||[]).filter(x=>!item.direction||x.dir===item.direction).map(x=>normEta(x.eta,"城巴",(lang()==='en'?x.rmk_en:x.rmk_tc))).filter(Boolean)}
   const [k,c]=await Promise.allSettled([getJSON(`https://data.etabus.gov.hk/v1/transport/kmb/eta/${item.kmbStopId}/${item.route}/${item.kmbServiceType}`),getJSON(`https://rt.data.gov.hk/v2/transport/citybus/eta/CTB/${item.ctbStopId}/${item.route}`)]);let all=[];
@@ -111,21 +112,22 @@ async function fetchTransit(item){
   if(c.status==="fulfilled")all.push(...(c.value.data||[]).filter(x=>x.dir===item.ctbDirection).map(x=>normEta(x.eta,"城巴",(lang()==='en'?x.rmk_en:x.rmk_tc))).filter(Boolean));
   if(k.status==="rejected"&&c.status==="rejected")throw new Error("both failed");return all.sort((a,b)=>a.mins-b.mins).slice(0,3);
 }
-const etaHTML=e=>`<span class="eta ${e.mins<=3?"soon":""}">${e.mins<=0?T("即到"):e.mins+L(" 分"," MINS")}<small>${esc(T(e.operator))} · ${esc(e.time)}</small></span>`;
+const etaHTML=e=>`<span class="eta ${e.mins<=3?"soon":""}"><b>${e.mins<=0?T("即到"):e.mins+L(" 分"," MINS")}</b><small class="eta-clock">(${esc(e.time)})</small><small class="eta-operator">${esc(T(e.operator))}</small></span>`;
 const routeDestination=r=>L(r.destination,r.destinationEn||r.destination);
 const routeStop=r=>L(r.stopName,r.stopNameEn||r.stopName);
 async function loadTransit(){
   window.InfoDeskNetwork?.begin('transit');
   const results=await Promise.allSettled(CFG.TRANSIT.map(fetchTransit));
-  for(const x of results)if(x.status==='fulfilled')x.value.sort((a,b)=>Date.parse(a.iso)-Date.parse(b.iso));
+  for(const x of results)if(x.status==='fulfilled')x.value=x.value.filter(e=>Number.isFinite(Date.parse(e.iso))&&Date.parse(e.iso)>=Date.now()-120000&&Date.parse(e.iso)<=Date.now()+3600000).sort((a,b)=>Date.parse(a.iso)-Date.parse(b.iso));
   state.transitResults=results;state.transitOrder=window.InfoDeskTransitOrder(CFG.TRANSIT,results,state.transitOrder,state.transitSorted);renderTransitData(results,true);
   if(results.some(x=>x.status==="fulfilled"))setStamp("#transitUpdated");
 }
 function renderTransitData(results,animate=false){
   const old=new Map([...document.querySelectorAll('#transit .route-card')].map(e=>[e.dataset.routeKey,e.getBoundingClientRect().top]));
   const order=state.transitOrder.length?state.transitOrder:CFG.TRANSIT.map(r=>r.key);
-  $("#transit").innerHTML=`<div class="transit-list">${order.map(key=>{const i=CFG.TRANSIT.findIndex(r=>r.key===key),r=CFG.TRANSIT[i],x=results[i],has=x?.status==='fulfilled'&&x.value.length;let body=has?x.value.slice(0,3).map(etaHTML).join(''):`<span class="route-error">${T('暫無班次')}${x?.status==='rejected'?`<small>${T('暫時未能取得數據')}</small>`:''}</span>`;if(animate&&has&&!window.InfoDeskNetwork?.stale('transit'))transitAlert(r,x.value[0]);return`<div class="route-card ${has?'':'no-service'}" data-route-key="${esc(key)}"><div class="route-identity"><div class="route-no">${esc(r.route)}</div><div class="operator">${esc(T(r.operator))}</div></div><div class="route-meta"><div class="route-dest">${L('往','TO')} ${esc(routeDestination(r))}</div><div class="route-stop">${esc(routeStop(r))}</div></div><div class="etas">${body}</div></div>`}).join("")}</div>`;
-  if(animate&&!window.InfoDeskTV?.enabled()&&!matchMedia('(prefers-reduced-motion:reduce)').matches)document.querySelectorAll('#transit .route-card').forEach(e=>{const from=old.get(e.dataset.routeKey),to=e.getBoundingClientRect().top;if(Number.isFinite(from)&&from!==to)e.animate([{transform:`translateY(${from-to}px)`},{transform:'translateY(0)'}],{duration:400,easing:'cubic-bezier(.2,.7,.2,1)'})});
+  $("#transit").innerHTML=`<div class="transit-list">${order.map(key=>{const i=CFG.TRANSIT.findIndex(r=>r.key===key),r=CFG.TRANSIT[i],x=results[i],has=x?.status==='fulfilled'&&x.value.length;let body=has?x.value.slice(0,3).map(etaHTML).join(''):`<span class="route-error">${L('60 分鐘內沒有班次','NO SERVICE WITHIN 60 MINS')}${x?.status==='rejected'?`<small>${T('暫時未能取得數據')}</small>`:''}</span>`;if(animate&&has&&!window.InfoDeskNetwork?.stale('transit'))transitAlert(r,x.value[0]);return`<div class="route-card ${has?'':'no-service'}" data-route-key="${esc(key)}" data-region="${esc(r.region||'其他')}"><div class="route-identity"><span class="region-tag">${esc(window.InfoDeskDisplay?.regionLabel(r.region)||r.region||'其他')}</span><div class="route-no">${esc(r.route)}</div><div class="operator">${esc(T(r.operator))}</div></div><div class="route-meta"><div class="route-dest">${L('往','TO')} ${esc(routeDestination(r))}</div><div class="route-stop">${esc(routeStop(r))}</div></div><div class="etas">${body}</div></div>`}).join("")}</div>`;
+  window.InfoDeskDisplay?.applyRegion();
+  if(animate&&!window.InfoDeskTV?.enabled()&&matchMedia('(max-width:767px)').matches&&!matchMedia('(prefers-reduced-motion:reduce)').matches)document.querySelectorAll('#transit .route-card').forEach(e=>{const from=old.get(e.dataset.routeKey),to=e.getBoundingClientRect().top;if(Number.isFinite(from)&&from!==to)e.animate([{transform:`translateY(${from-to}px)`},{transform:'translateY(0)'}],{duration:400,easing:'cubic-bezier(.2,.7,.2,1)'})});
   window.InfoDeskView?.transit(results);
 }
 function setupTransitSort(){state.transitSorted=localStorage.getItem('dashboard_transit_sort')!=='fixed';const render=()=>{$('#transitSort').textContent=T(state.transitSorted?'按到站排序':'固定次序');$('#transitSort').setAttribute('aria-pressed',String(state.transitSorted))};render();$('#transitSort').onclick=()=>{state.transitSorted=!state.transitSorted;localStorage.setItem('dashboard_transit_sort',state.transitSorted?'arrival':'fixed');render();if(state.transitResults){state.transitOrder=window.InfoDeskTransitOrder(CFG.TRANSIT,state.transitResults,state.transitOrder,state.transitSorted);renderTransitData(state.transitResults,true)}};document.addEventListener('infodesk:language',render)}
@@ -298,7 +300,7 @@ async function init(){
   $("#gmailAuth").onclick=IS_EXTENSION?connectGmailExtension:connectGmailWeb;$("#gmailDisconnect").onclick=()=>disconnectGmail(true);setupWhatsApp();
   const runtime=IS_EXTENSION?`擴充功能模式｜ID：<code>${esc(chrome.runtime.id)}</code><br>Gmail Redirect URI：<code>${esc(chrome.identity.getRedirectURL("oauth2"))}</code>`:`GitHub Pages／網頁模式｜目前網址：<code>${esc(location.origin)}</code>`;$("#runtimeInfo").innerHTML=runtime;
   setupMessagePanels();setupTransitSort();
-  const jobs=[[loadTransit,30000],[loadWeather,60000],[loadFx,60000],[loadNews,60000],[loadMarkets,60000]];
+  const jobs=[[loadTransit,30000],[loadWeather,600000],[loadFx,60000],[loadNews,60000],[loadMarkets,60000]];
   for(const [load,interval]of jobs){let busy=false;const run=async()=>{if(busy)return;busy=true;try{await load()}finally{busy=false}};run();setInterval(run,interval)}
 }
 

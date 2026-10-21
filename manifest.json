@@ -19,5 +19,6 @@
   ],
   "background": {"service_worker": "background.js"},
   "chrome_url_overrides": {"newtab": "index.html"},
-  "content_security_policy": {"extension_pages": "script-src 'self'; object-src 'self'"}
+  "sandbox": {"pages": ["chart-widget.html"]},
+  "content_security_policy": {"extension_pages": "script-src 'self'; object-src 'self'", "sandbox": "sandbox allow-scripts allow-popups; script-src 'self' https://s3.tradingview.com; object-src 'none'; child-src https://www.tradingview.com https://s.tradingview.com"}
 }

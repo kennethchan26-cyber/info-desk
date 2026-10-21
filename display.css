@@ -1,0 +1,95 @@
+.paged-display .tv-main{display:grid;grid-column:1;grid-row:2;grid-template-rows:104px minmax(0,1fr) 32px;min-height:0;height:100%}
+.paged-display .tv-main-head{padding:12px 24px;display:flex;justify-content:space-between;gap:16px;border-bottom:1px solid var(--line)}
+.paged-display .tv-main-head h1{font-size:42px;line-height:1.25}
+.paged-display .tv-main-head p{font-size:15px;color:var(--muted);margin-top:6px}
+.paged-display .tv-page-markers{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0;line-height:1}
+.paged-display .tv-page-markers b{font-size:22px;color:var(--orange)}
+.paged-display .tv-page-markers span{font-size:18px;color:#eee}
+.paged-display .tv-page-body{padding:16px 22px;min-width:0;min-height:0;display:grid;gap:14px;overflow:visible;align-content:stretch}
+.paged-display .tv-page-body>*{min-width:0;min-height:0}
+.paged-display .tv-page-source{padding:6px 22px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);line-height:18px}
+.paged-display .tv-type-clocks{display:flex;flex-direction:column;padding:0;gap:0}
+.paged-display .tv-session{display:grid;grid-template-columns:34% minmax(0,1fr);flex:1;border-bottom:1px solid var(--line)}
+.paged-display .tv-session .countdown-block{padding:20px}
+.paged-display .tv-session .countdown-number{font-size:58px;line-height:1.2;margin:16px 0}
+.paged-display .tv-session .countdown-label{font-size:22px;flex-wrap:wrap}
+.paged-display .tv-index-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+.paged-display .tv-index-grid .tv-quote{padding:16px 12px;gap:5px;border-right:1px solid var(--line)}
+.paged-display .tv-index-grid .tv-price{font-size:51px}
+.paged-display .tv-index-grid .tv-change{font-size:27px}
+.paged-display .tv-index-grid small{font-size:11px}
+.paged-display .tv-type-hk{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(var(--tv-rows),minmax(0,1fr))}
+.paged-display .tv-type-us,.paged-display .tv-type-fx{grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(var(--tv-rows),minmax(0,1fr))}
+.paged-display .tv-quote,.paged-display .tv-fx{display:flex;flex-direction:column;justify-content:center;gap:8px;padding:16px 20px;border-bottom:1px solid var(--line);overflow-wrap:anywhere}
+.paged-display .tv-tag{align-self:flex-start;background:var(--orange);color:#0c070b;padding:3px 8px;font-size:18px;line-height:1.2;font-weight:900}
+.paged-display .tv-price{display:block;font-size:64px;line-height:1.2;font-weight:800;color:white;letter-spacing:-1px}
+.paged-display .tv-type-us .tv-quote{padding:12px;gap:5px}
+.paged-display .tv-type-us .tv-price{font-size:60px}
+.paged-display .tv-change{font-size:27px;line-height:1.15}
+.paged-display .tv-quote .tv-change.up:before{content:'▲ '}
+.paged-display .tv-quote .tv-change.down:before{content:'▼ '}
+.paged-display .tv-quote small,.paged-display .tv-fx small{font-size:13px;line-height:1.4;color:var(--muted)}
+.paged-display .tv-quote .spark-pending{min-height:18px;font-size:13px}
+.paged-display .tv-quote .sparkline{height:30px;margin:0}
+.paged-display .tv-fx-name{display:flex;align-items:center;gap:10px;font-size:20px}
+.paged-display .tv-type-transit{display:flex;flex-direction:column;justify-content:space-evenly;gap:0;padding:6px 22px}
+.paged-display .tv-type-transit .route-card{flex:1;grid-template-columns:98px minmax(0,1fr) 43%;gap:14px;padding:6px 0}
+.paged-display .tv-type-transit .route-no{font-size:50px;line-height:1.2}
+.paged-display .tv-type-transit .operator{font-size:11px;margin-top:5px}
+.paged-display .tv-type-transit .route-dest{font-size:25px;line-height:1.15}
+.paged-display .tv-type-transit .route-stop{font-size:14px;line-height:1.35;margin-top:5px}
+.paged-display .tv-type-transit .eta{font-size:37px;padding:8px 3px}
+.paged-display .tv-type-transit .eta small{font-size:12px}
+.paged-display .tv-type-weather{display:flex;flex-direction:column;gap:10px;justify-content:space-evenly}
+.paged-display .tv-type-weather>*{flex-shrink:0}
+.paged-display .tv-type-weather .location{padding:0 12px}
+.paged-display .tv-type-weather .temp{font-size:76px;line-height:1.2}
+.paged-display .tv-type-weather .humidity{font-size:19px}
+.paged-display .tv-type-weather .warning-box{margin:0;padding:7px 12px;font-size:18px}
+.paged-display .tv-weather-summary{font-size:19px;line-height:1.45;overflow-wrap:anywhere}
+.paged-display .tv-type-weather .forecast{margin:0;gap:14px}
+.paged-display .tv-type-weather .day{padding:7px 5px}
+.paged-display .tv-type-weather .day-date{font-size:21px}
+.paged-display .tv-type-weather .day-temp{font-size:36px}
+.paged-display .tv-type-weather .day-desc{font-size:17px;line-height:1.35}
+.paged-display .tv-type-weather .day-rh{font-size:13px;margin-top:4px}
+.paged-display .tv-type-weather .fx-note{font-size:12px;margin:0}
+.paged-display .tv-type-news{grid-template-rows:repeat(var(--tv-rows),minmax(0,1fr))}
+.paged-display .tv-news-card{border-bottom:1px solid var(--line);display:flex;flex-direction:column;justify-content:center;gap:12px;padding:5px 0}
+.paged-display .tv-news-card>div{display:flex;align-items:center;gap:12px}
+.paged-display .tv-news-card small{font-size:15px;color:var(--muted)}
+.paged-display .tv-news-card a{font-size:28px;line-height:1.3;text-decoration:none;overflow-wrap:anywhere}
+.paged-display .tv-type-trends{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(var(--tv-rows),minmax(0,1fr))}
+.paged-display .tv-trend-card{display:flex;gap:16px;padding:16px 10px;border-bottom:1px solid var(--line);align-items:flex-start;overflow-wrap:anywhere}
+.paged-display .tv-trend-rank{font-size:34px;color:var(--orange);line-height:1.2;flex:0 0 40px;white-space:nowrap}
+.paged-display .tv-trend-card>div{min-width:0}
+.paged-display .tv-trend-card a{display:block;text-decoration:none}
+.paged-display .tv-trend-term{font-size:30px;line-height:1.2}
+.paged-display .tv-trend-card small{display:block;color:var(--orange);font-size:18px;margin:8px 0}
+.paged-display .tv-related{font-size:18px;line-height:1.35;color:#ddd6e5;margin-top:8px}
+
+.region-filters{display:flex;gap:6px;flex-wrap:wrap;padding:8px 14px;border-bottom:1px solid var(--line)}.region-filters button,#desktopPageTabs button,.rail-pagination button{background:#110d19;color:white;border:1px solid #5b4769;padding:4px 12px}.region-filters button[aria-pressed=true],#desktopPageTabs button[aria-current=true]{background:var(--orange);color:#000}.region-tag{display:inline-block;background:var(--orange);color:#000;padding:2px 5px;font-size:10px;margin-bottom:3px}.region-hidden{display:none!important}.eta b{font:inherit}.eta-clock{display:block}.eta-operator{font-size:10px}.rail-pagination{display:none}#headerWeather{display:none}
+html.tv-mode .chart-tv .chart-name{font-size:36px!important}html.tv-mode .chart-tv .chart-quote strong{font-size:56px!important}html.tv-mode .chart-tv.chart-focus .chart-quote strong{font-size:72px!important}html.tv-mode .chart-tv .chart-high-low{font-size:28px!important}
+@keyframes weatherPulse{50%{opacity:.55}}.header-warning{display:inline-block;background:#ed234e;color:#fff;padding:4px 7px;animation:weatherPulse 2.5s ease-in-out infinite}.header-warnings{display:flex;gap:6px;flex-wrap:wrap}.header-warning[title*=黃色]{background:#ffd232;color:#000}
+.desktop-pages,.desktop-pages body{height:100%;overflow:hidden!important}.desktop-pages body{padding:0;min-height:0}.desktop-pages #deskSurface{height:100dvh;display:grid;grid-template-rows:92px auto minmax(0,1fr) 24px var(--lower) var(--ticker);overflow:hidden}.desktop-pages #deskSurface>*{min-width:0;min-height:0}.desktop-pages .topbar{grid-template-columns:140px 200px auto minmax(260px,1fr) 180px;gap:12px}.desktop-pages .brand{font-size:32px}.desktop-pages .header-actions{flex-wrap:wrap;max-width:300px}.desktop-pages #headerWeather,html.tv-mode #headerWeather{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:8px;font-size:20px}.desktop-pages #headerWeather b{font-size:24px}.desktop-pages .weather-symbol{font-size:32px}
+.desktop-pages .broadcast-layout{width:100%;max-width:none;height:100%;min-height:0;grid-template-rows:22px 36px minmax(0,1fr);padding-bottom:6px}.desktop-pages .program-bar{grid-row:1}.desktop-pages .quickbar{grid-row:2}.paged-display .stage-deck{display:none!important}.desktop-pages #tvMain{display:grid;grid-row:3;grid-column:1;grid-template-rows:auto auto minmax(0,1fr) 24px 30px}.desktop-pages #tvRail{display:none!important}.desktop-pages .tv-main-head{padding:10px 18px}.desktop-pages .tv-main-head h1{font-size:34px}.desktop-pages .tv-main-head p{font-size:12px}.desktop-pages .tv-page-body{padding:10px 16px;gap:10px}.desktop-pages .tv-price{font-size:48px}.desktop-pages .tv-index-grid .tv-price{font-size:35px}.desktop-pages .tv-index-grid .tv-change{font-size:22px}.desktop-pages .tv-index-grid .tv-quote{padding:10px 8px}.desktop-pages .tv-tag{font-size:14px}.desktop-pages .tv-change{font-size:22px}.desktop-pages .tv-session .countdown-number{font-size:48px}.desktop-pages .tv-session .countdown-label{font-size:20px}.desktop-pages .tv-session .countdown-hours,.desktop-pages .tv-session .countdown-date{font-size:12px}.desktop-pages .tv-session .countdown-block{padding:12px}.desktop-pages .tv-page-source{font-size:11px;padding:3px 12px;line-height:16px}.desktop-pages .tv-type-transit .route-card{grid-template-columns:75px minmax(0,1fr) 42%;gap:8px}.desktop-pages .tv-type-transit .route-no{font-size:38px}.desktop-pages .tv-type-transit .route-dest{font-size:21px}.desktop-pages .tv-type-transit .route-stop{font-size:12px}.desktop-pages .tv-type-transit .eta{font-size:28px;padding:4px}.desktop-pages .tv-type-transit .eta-clock{font-size:15px}.desktop-pages .tv-type-transit .operator{font-size:10px}.desktop-pages .tv-type-news a{font-size:25px}.desktop-pages .tv-related{font-size:17px}.desktop-pages .tv-type-weather .temp{font-size:55px}.desktop-pages .tv-type-weather .humidity{font-size:15px}.desktop-pages .tv-weather-summary{font-size:16px}.desktop-pages .tv-type-weather .day-desc{font-size:14px}
+#desktopPageTabs{display:flex;gap:4px;padding:3px 10px}#desktopPageTabs button{flex:1;padding:2px;font-size:12px}.desktop-pages .data-rail{grid-column:2;grid-row:3;height:100%;min-height:0;overflow:hidden!important;display:flex;flex-direction:column;gap:6px;position:relative;padding-bottom:30px}.desktop-pages .data-rail>.panel{flex:1;min-height:0;overflow:hidden}.desktop-pages .data-rail>.collapsed{flex:0 0 auto}.desktop-pages .rail-hidden,.desktop-pages .rail-item-hidden{display:none!important}.desktop-pages .rail-pagination{display:flex;position:absolute;bottom:0;left:0;right:0;justify-content:center;align-items:center;gap:12px;height:28px;background:#0b0810}.desktop-pages .rail-pagination button{padding:0 14px}.desktop-pages .data-rail .fx-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.desktop-pages .data-rail .fx-rate{font-size:40px}.desktop-pages .data-rail .fx-change{font-size:18px}.desktop-pages .data-rail .fx-note{display:none}.desktop-pages .panel-body,.desktop-pages .news-columns,.desktop-pages .market-list,.desktop-pages #gmail,.desktop-pages #gmailContent,.desktop-pages #cryptoContent{overflow:hidden!important;max-height:none}.desktop-pages .utility{overflow:hidden;margin:0;padding:0 18px;pointer-events:none}.desktop-pages .utility summary{font-size:10px}.desktop-pages .utility[open]>:not(summary){display:none}.desktop-pages .lower-third,.desktop-pages .ticker-shell{position:relative;inset:auto;min-height:0}.desktop-pages .lower-third{grid-row:5}.desktop-pages .ticker-shell{grid-row:6;padding:0}.desktop-pages .breaking{bottom:var(--ticker)}.paged-display .tv-page-body{overflow:hidden!important}.paged-display .tv-type-indices-chart,.paged-display .tv-type-focus-chart{display:block}.paged-display .tv-type-indices-chart>*,.paged-display .tv-type-focus-chart>*{height:100%}.tv-only{display:none}.desktop-pages #tvMain{display:grid}
+/* TV canvas follows the device aspect. All visible DOM type is at least 26px at1080h. */
+.desktop-pages .tv-main-head{grid-row:1}.desktop-pages #desktopTransitFilters{grid-row:2}.desktop-pages #tvPageBody{grid-row:3}.desktop-pages #tvPageSource{grid-row:4}.desktop-pages #desktopPageTabs{grid-row:5}.desktop-pages .data-rail>.crypto-panel:has(#cryptoContent[hidden]){flex:0 0 auto}
+html.tv-mode #deskSurface{width:var(--tv-width,1920px);height:1080px;padding:10.8px calc(var(--tv-width,1920px) * .01);grid-template-rows:132px auto minmax(0,1fr) 32px 92px 56px}
+html.tv-mode :where(#deskSurface *){font-size:26px!important;line-height:1.2}
+html.tv-mode .topbar{height:132px;grid-template-columns:170px 300px minmax(0,1fr) 330px;gap:20px;padding:0}
+html.tv-mode .brand,html.tv-mode .brand span{font-size:46px!important}html.tv-mode .brand small,html.tv-mode .header-actions,html.tv-mode .program-bar,html.tv-mode .quickbar,html.tv-mode #desktopPageTabs,html.tv-mode #desktopTransitFilters,html.tv-mode button,html.tv-mode .region-tag,html.tv-mode .region-filters{display:none!important}
+html.tv-mode #clock{font-size:56px!important}html.tv-mode #headerWeather{gap:15px;max-height:106px;overflow:hidden}html.tv-mode #headerWeather>span,html.tv-mode #headerWeather b{font-size:30px!important}html.tv-mode #headerWeather .weather-symbol{font-size:44px!important}
+html.tv-mode .broadcast-layout{max-width:none;padding:6px 0;grid-template-rows:minmax(0,1fr);grid-template-columns:minmax(0,69fr) minmax(0,31fr);gap:10px}
+html.tv-mode #tvMain{grid-row:1;grid-template-rows:88px minmax(0,1fr)}html.tv-mode .tv-main-head{padding:15px 22px;align-items:center}html.tv-mode .tv-main-head h1{font-size:40px!important}html.tv-mode .tv-main-head p,html.tv-mode .tv-page-source{display:none!important}html.tv-mode .tv-main-head .tv-page-markers b{font-size:30px!important}
+html.tv-mode #tvRail{grid-row:1;grid-template-rows:repeat(2,minmax(0,1fr));gap:10px}html.tv-mode .tv-rail-panel{grid-template-rows:48px minmax(0,1fr)}html.tv-mode .tv-rail-panel h2{font-size:36px!important;line-height:1}html.tv-mode .tv-rail-panel header{padding:5px 16px}
+html.tv-mode .tv-page-body{padding:10px 18px;gap:12px}html.tv-mode .tv-type-clocks{padding:0;gap:0}html.tv-mode .tv-session{grid-template-columns:30% minmax(0,1fr)}html.tv-mode .tv-session .countdown-block{padding:16px}html.tv-mode .tv-session .countdown-number{font-size:64px!important}html.tv-mode .tv-session .countdown-label{font-size:30px!important}html.tv-mode .countdown-number small{font-size:26px!important}html.tv-mode .countdown-hours,html.tv-mode .countdown-date{display:none!important}
+html.tv-mode .tv-index-grid .tv-price,html.tv-mode .tv-price{font-size:64px!important}html.tv-mode .tv-quote{padding:12px;gap:10px}html.tv-mode .tv-tag{font-size:28px!important}html.tv-mode .tv-quote>small,html.tv-mode .tv-fx>small,html.tv-mode .tv-news-card small,html.tv-mode .spark-pending,html.tv-mode .spark-caption,html.tv-mode .chart-attribution{display:none!important}html.tv-mode .tv-change{font-size:30px!important}html.tv-mode .tv-fx .tv-price{font-size:68px!important}
+html.tv-mode #tvRailTransitBody{grid-template-rows:repeat(3,minmax(0,1fr));padding:0 15px}html.tv-mode .tv-fast-row{grid-template-columns:110px minmax(0,1fr) 155px;gap:8px}html.tv-mode .tv-fast-row>b,html.tv-mode .tv-fast-row>strong{font-size:56px!important;padding:0}html.tv-mode .tv-fast-row>span{font-size:30px!important}html.tv-mode .tv-fast-row>strong small{font-size:26px!important;display:inline;margin:0 0 0 4px}html.tv-mode .tv-fast-row>span small{font-size:26px!important;display:block;margin-top:2px}
+html.tv-mode #tvRailFxBody{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(3,minmax(0,1fr));gap:0 14px;padding:0 14px}html.tv-mode .tv-rail-fx{grid-template-columns:auto 1fr;gap:1px}html.tv-mode .tv-rail-fx>strong{font-size:56px!important;line-height:1.1}html.tv-mode .tv-rail-fx .tv-tag{font-size:26px!important;padding:3px}html.tv-mode .tv-rail-fx>span{font-size:26px!important;line-height:1.1}
+html.tv-mode .tv-type-transit .route-card{grid-template-columns:130px minmax(0,1fr) 43%;gap:12px;padding:5px 0}html.tv-mode .tv-type-transit .route-no{font-size:56px!important}html.tv-mode .tv-type-transit .operator,html.tv-mode .eta-operator{display:none!important}html.tv-mode .tv-type-transit .route-dest{font-size:32px!important}html.tv-mode .tv-type-transit .route-stop{font-size:26px!important;margin-top:3px}html.tv-mode .tv-type-transit .eta{padding:3px}html.tv-mode .tv-type-transit .eta b{font-size:56px!important}html.tv-mode .tv-type-transit .eta-clock{font-size:26px!important}.paged-display .route-error{line-height:1.3}
+html.tv-mode .tv-type-weather .location-name{font-size:28px!important}html.tv-mode .tv-type-weather .temp{font-size:72px!important}html.tv-mode .tv-type-weather .humidity small,html.tv-mode .tv-type-weather .fx-note,html.tv-mode .tv-type-weather .day-rh{display:none!important}html.tv-mode .tv-type-weather .day-temp{font-size:56px!important}html.tv-mode .tv-weather-summary{font-size:28px!important;line-height:1.35}html.tv-mode .tv-type-weather .day-desc{font-size:26px!important;line-height:1.3}html.tv-mode .tv-news-card a{font-size:36px!important;line-height:1.3}html.tv-mode .tv-trend-term,html.tv-mode .tv-trend-rank{font-size:36px!important}html.tv-mode .tv-related{font-size:28px!important;line-height:1.35}
+html.tv-mode .lower-headline,html.tv-mode .lower-headline *,html.tv-mode .breaking strong{font-size:40px!important}html.tv-mode .lower-third{grid-row:5}html.tv-mode .ticker-shell{grid-row:6;height:56px}html.tv-mode .tv-ticker-items,html.tv-mode .tv-ticker-items *{font-size:30px!important}html.tv-mode .ticker-label{font-size:28px!important}html.tv-mode .breaking{left:10.8px;right:10.8px;bottom:66.8px;height:92px}html.tv-mode .utility{height:32px}html.tv-mode .utility summary{font-size:0!important}html.tv-mode .utility summary span{font-size:26px!important;line-height:32px}html.tv-mode .utility summary a{pointer-events:none}html.tv-mode a{pointer-events:none!important}html.tv-mode #appNotices span{font-size:26px!important}html.tv-mode #installHelp{display:none!important}html.tv-mode .header-warning{animation:weatherPulse 2.5s ease-in-out infinite!important}
+@media(max-width:767px){html:not(.tv-mode) .region-filters{padding:10px}html:not(.tv-mode) .region-tag{font-size:11px}html:not(.tv-mode) .eta-clock{font-size:13px}html:not(.tv-mode) #headerWeather{display:none}html:not(.tv-mode) .rail-pagination{display:none}html:not(.tv-mode) .panel,html:not(.tv-mode) .panel-body{overflow:visible;max-height:none}html:not(.tv-mode) .chart-mobile-page{display:flex!important;flex-direction:column;order:12}html:not(.tv-mode) .chart-mobile-page .indices-charts{display:grid;grid-template-columns:1fr}html:not(.tv-mode) .chart-mobile-page .focus-chart-slot{height:400px}}
+

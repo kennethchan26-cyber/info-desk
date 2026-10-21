@@ -10,7 +10,9 @@ window.InfoDeskTV = (() => {
   function fit(){
     if(!enabled)return;
     const viewport=window.visualViewport,w=viewport?.width||innerWidth,h=viewport?.height||innerHeight;
-    root.style.setProperty('--tv-scale',String(Math.min(w/WIDTH,h/HEIGHT)));
+    // Native 1080-high canvas follows the viewport aspect, including 19.5:9 iPhones.
+    root.style.setProperty('--tv-width',(HEIGHT*w/h)+'px');
+    root.style.setProperty('--tv-scale',String(h/HEIGHT));
     root.style.setProperty('--tv-center-x',((viewport?.offsetLeft||0)+w/2)+'px');
     root.style.setProperty('--tv-center-y',((viewport?.offsetTop||0)+h/2)+'px');
   }

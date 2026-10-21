@@ -64,14 +64,26 @@ window.DASHBOARD_CONFIG = {
     ]
   },
 
-  /* 已按官方路線及站點列表核實（2026-10-21）。
-     680 城巴把九巴 ST534 同一位置命名為「歷奇單車場, 小瀝源路」。 */
+  /* 已按官方路線及站點列表核實（2026-10-21）。region 為上車站地區，可自行新增。
+     direction: 九巴／城巴 O=outbound、I=inbound；小巴使用 routeSeq/stopSeq。
+     680 城巴把九巴 ST534 同一位置命名為「歷奇單車場, 小瀝源路」。
+     682 是城巴獨營，往柴灣（東）為 I；九巴官方路線表沒有 682。
+     同名站柱勿混用：281A 綠怡雅苑 ST603；49X/83X ST604（相距約 35 米）；
+     86 廣柏樓 ST600；83K/83S ST601（相距約 10 米），均按各路線站表選取。 */
   TRANSIT: [
-    { key: "gmb804", destinationEn: "Kwong Yuen", stopNameEn: "Bus lay-by on Che Kung Miu Road outside Tai Wai Station Public Transport Interchange", operator: "專線小巴", route: "804", destination: "廣源", stopName: "車公廟路，大圍站公共運輸交匯處外", api: "gmb", routeId: 2010275, routeSeq: 2, stopSeq: 5, stopId: "20001582" },
-    { key: "gmb65k", destinationEn: "Fo Tan Station (Circular)", stopNameEn: "Au Pui Wan Street, Near Kin Ho Industrial Building Block 2", operator: "專線小巴", route: "65K", destination: "火炭站（循環線）", stopName: "坳背灣街近金豪工業大廈第二座", api: "gmb", routeId: 2009081, routeSeq: 1, stopSeq: 6, stopId: "20001505" },
-    { key: "gmb69x", destinationEn: "Cyberport", stopNameEn: "Lockhart Road, near Cannon Street", operator: "專線小巴", route: "69X", destination: "數碼港", stopName: "駱克道近景隆街", api: "gmb", routeId: 2000511, routeSeq: 2, stopSeq: 1, stopId: "20006944" },
-    { key: "bus680", destinationEn: "ADMIRALTY STATION (EAST)", stopNameEn: "ALVA HOTEL BY ROYAL (ST534)", operator: "九巴＋城巴", route: "680", destination: "金鐘站（東）", stopName: "帝逸酒店（ST534）", api: "joint", kmbStopId: "2223D64E9ED2E1A7", kmbDirection: "O", kmbServiceType: "1", ctbStopId: "003082", ctbDirection: "I" },
-    { key: "ctb30x", destinationEn: "Admiralty (East)", stopNameEn: "Cyberport 3, Cyberport Road", operator: "城巴", route: "30X", destination: "金鐘（東）", stopName: "數碼港三座，數碼港道", api: "ctb", stopId: "002393", direction: "O" }
+    { key: "gmb804", region: "沙田", destinationEn: "Kwong Yuen", stopNameEn: "Bus lay-by on Che Kung Miu Road outside Tai Wai Station Public Transport Interchange", operator: "專線小巴", route: "804", destination: "廣源", stopName: "車公廟路，大圍站公共運輸交匯處外", api: "gmb", routeId: 2010275, routeSeq: 2, stopSeq: 5, stopId: "20001582" },
+    { key: "gmb65k", region: "沙田", destinationEn: "Fo Tan Station (Circular)", stopNameEn: "Au Pui Wan Street, Near Kin Ho Industrial Building Block 2", operator: "專線小巴", route: "65K", destination: "火炭站（循環線）", stopName: "坳背灣街近金豪工業大廈第二座", api: "gmb", routeId: 2009081, routeSeq: 1, stopSeq: 6, stopId: "20001505" },
+    { key: "gmb69x", region: "港島", destinationEn: "Cyberport", stopNameEn: "Lockhart Road, near Cannon Street", operator: "專線小巴", route: "69X", destination: "數碼港", stopName: "駱克道近景隆街", api: "gmb", routeId: 2000511, routeSeq: 2, stopSeq: 1, stopId: "20006944" },
+    { key: "bus680", region: "沙田", destinationEn: "ADMIRALTY STATION (EAST)", stopNameEn: "ALVA HOTEL BY ROYAL (ST534)", operator: "九巴＋城巴", route: "680", destination: "金鐘站（東）", stopName: "帝逸酒店（ST534）", api: "joint", kmbStopId: "2223D64E9ED2E1A7", kmbDirection: "O", kmbServiceType: "1", ctbStopId: "003082", ctbDirection: "I" },
+    { key: "ctb30x", region: "港島", destinationEn: "Admiralty (East)", stopNameEn: "Cyberport 3, Cyberport Road", operator: "城巴", route: "30X", destination: "金鐘（東）", stopName: "數碼港三座，數碼港道", api: "ctb", stopId: "002393", direction: "O" },
+    { key: "kmb281e", region: "九龍", destinationEn: "KWONG YUEN", stopNameEn: "OLYMPIC STATION (MK656)", operator: "九巴", route: "281E", destination: "廣源", stopName: "奧運站 (MK656)", api: "kmb", stopId: "9DA7325E4238402B", direction: "O", serviceType: "1", stopSeq: 10 },
+    { key: "ctb682", region: "沙田", destinationEn: "Chai Wan (East)", stopNameEn: "Adventure Cycling Area, Siu Lek Yuen Road", operator: "城巴", route: "682", destination: "柴灣（東）", stopName: "歷奇單車場, 小瀝源路", api: "ctb", stopId: "003082", direction: "I", stopSeq: 19 },
+    { key: "kmb281a", region: "沙田", destinationEn: "KOWLOON STATION", stopNameEn: "SIU LEK YUEN (GREENHILL VILLA) (ST603)", operator: "九巴", route: "281A", destination: "九龍站", stopName: "小瀝源 (綠怡雅苑) (ST603)", api: "kmb", stopId: "75D57F5A5891A1C2", direction: "O", serviceType: "1", stopSeq: 2 },
+    { key: "kmb49x", region: "沙田", destinationEn: "TSING YI FERRY", stopNameEn: "SIU LEK YUEN (GREENHILL VILLA) (ST604)", operator: "九巴", route: "49X", destination: "青衣碼頭", stopName: "小瀝源 (綠怡雅苑) (ST604)", api: "kmb", stopId: "51D13DDB8EBA98AF", direction: "O", serviceType: "1", stopSeq: 2 },
+    { key: "kmb83x", region: "沙田", destinationEn: "KWUN TONG FERRY", stopNameEn: "SIU LEK YUEN (GREENHILL VILLA) (ST604)", operator: "九巴", route: "83X", destination: "觀塘碼頭", stopName: "小瀝源 (綠怡雅苑) (ST604)", api: "kmb", stopId: "51D13DDB8EBA98AF", direction: "O", serviceType: "1", stopSeq: 8 },
+    { key: "kmb86", region: "沙田", destinationEn: "MEI FOO", stopNameEn: "CYPRESS HOUSE KWONG YUEN ESTATE (ST600)", operator: "九巴", route: "86", destination: "美孚", stopName: "廣源邨廣柏樓 (ST600)", api: "kmb", stopId: "260B43921BAFD8CB", direction: "O", serviceType: "1", stopSeq: 2 },
+    { key: "kmb83k", region: "沙田", destinationEn: "SHA TIN CENTRAL (CIRCULAR)", stopNameEn: "CYPRESS HOUSE KWONG YUEN ESTATE (ST601)", operator: "九巴", route: "83K", destination: "沙田市中心（循環線）", stopName: "廣源邨廣柏樓 (ST601)", api: "kmb", stopId: "7E3C2CA5ABEC8416", direction: "O", serviceType: "1", stopSeq: 2 },
+    { key: "kmb83s", region: "沙田", destinationEn: "SHATIN CENTRAL", stopNameEn: "CYPRESS HOUSE KWONG YUEN ESTATE (ST601)", operator: "九巴", route: "83S", destination: "沙田市中心", stopName: "廣源邨廣柏樓 (ST601)", api: "kmb", stopId: "7E3C2CA5ABEC8416", direction: "O", serviceType: "1", stopSeq: 2 }
   ],
 
   NEWS: {

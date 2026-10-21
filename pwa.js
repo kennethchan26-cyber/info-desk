@@ -24,9 +24,11 @@ window.InfoDeskPWA=(()=>{
     q('#installApp').onclick=async()=>{if(installPrompt){await installPrompt.prompt();await installPrompt.userChoice;installPrompt=null;return}q('#installHelp').hidden=false;q('#installHelp').textContent=mobile()?t('Safari：分享 → 加入主畫面'):t('Chrome：選單 → 投放、儲存及分享 → 安裝網頁為應用程式');};
     try{
       registration=await navigator.serviceWorker.register('./sw.js',{scope:'./',updateViaCache:'none'});
-      const ready=()=>{if(registration.waiting&&navigator.serviceWorker.controller)q('#updateApp').hidden=false};ready();
+      const ready=()=>{if(registration.waiting&&navigator.serviceWorker.controller)q('#updateApp').hidden=Boolean(window.InfoDeskTV?.enabled())};ready();
       registration.addEventListener('updatefound',()=>{const worker=registration.installing;worker?.addEventListener('statechange',ready)});
       q('#updateApp').onclick=()=>{if(!registration.waiting){registration.update();return}updating=true;registration.waiting.postMessage({type:'SKIP_WAITING'})};
+      document.addEventListener('infodesk:pagechange',()=>{if(window.InfoDeskTV?.enabled()&&registration.waiting&&!updating){updating=true;registration.waiting.postMessage({type:'SKIP_WAITING'})}});
+      document.addEventListener('infodesk:tv',ready);
       navigator.serviceWorker.addEventListener('controllerchange',()=>{if(updating)location.reload()});
       registration.update().catch(()=>{});setInterval(()=>registration.update().catch(()=>{}),900000);
     }catch{q('#installHelp').hidden=false;q('#installHelp').textContent=t('離線介面未能儲存；請保持網絡連線並重新整理。')}
