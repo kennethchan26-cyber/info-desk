@@ -1,0 +1,14 @@
+# Whitelist only reviewed public application files. Do not upload the whole folder.
+/*
+!/.gitignore
+!/.nojekyll
+!/index.html
+!/styles.css
+!/app.js
+!/config.js
+!/manifest.json
+!/background.js
+!/icon.svg
+!/apple-touch-icon.png
+!/site.webmanifest
+!/README.md

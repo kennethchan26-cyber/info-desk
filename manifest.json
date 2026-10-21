@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "INFO//DESK 個人資訊看板",
+  "version": "1.0.0",
+  "description": "新分頁顯示香港天氣、交通、Gmail、市場、外匯及新聞，並只從 WhatsApp Web 分頁標題讀取未讀數字。",
+  "permissions": ["tabs", "storage", "identity", "notifications", "alarms"],
+  "host_permissions": [
+    "https://web.whatsapp.com/*",
+    "https://data.weather.gov.hk/*",
+    "https://data.etagmb.gov.hk/*",
+    "https://data.etabus.gov.hk/*",
+    "https://rt.data.gov.hk/*",
+    "https://api.frankfurter.app/*",
+    "https://query1.finance.yahoo.com/*",
+    "https://r.jina.ai/*",
+    "https://gmail.googleapis.com/*",
+    "https://accounts.google.com/*",
+    "https://oauth2.googleapis.com/*"
+  ],
+  "background": {"service_worker": "background.js"},
+  "chrome_url_overrides": {"newtab": "index.html"},
+  "content_security_policy": {"extension_pages": "script-src 'self'; object-src 'self'"}
+}

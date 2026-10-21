@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="zh-Hant-HK">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="referrer" content="no-referrer-when-downgrade">
+  <meta name="theme-color" content="#05070a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="資訊看板">
+  <meta name="application-name" content="INFO DESK">
+  <meta name="description" content="香港天氣、交通、個人郵件、市場及新聞資訊看板。">
+  <title>INFO//DESK 個人資訊看板</title>
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+  <link rel="manifest" href="site.webmanifest">
+  <link rel="stylesheet" href="styles.css">
+  <script src="config.js"></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <div id="breaking" class="breaking" role="alert" aria-live="assertive" hidden>
+    <b id="breakingType">最新</b><span id="breakingText"></span><button id="breakingClose" aria-label="關閉提示">×</button>
+  </div>
+
+  <header class="topbar">
+    <div class="brand">INFO<b>//</b>DESK<small>HONG KONG PERSONAL TERMINAL</small></div>
+    <div class="header-actions">
+      <label class="toggle"><input id="muteToggle" type="checkbox"> 靜音</label>
+      <label class="toggle"><input id="notifyToggle" type="checkbox"> 桌面通知</label>
+      <button id="testAlert" class="btn" type="button">測試提示</button>
+    </div>
+    <div class="status"><div id="clock" class="clock">--:--:--</div><div id="date" class="date">--/--/----</div><div id="lastUpdate" class="last-update">最後更新：等待資料</div></div>
+  </header>
+
+  <main>
+    <section class="grid hero">
+      <article class="panel"><div class="panel-head"><span class="panel-title">香港天氣</span><span id="weatherUpdated" class="updated-tag">每 60 秒</span></div><div id="weather" class="panel-body"><div class="loading">正在取得天文台資料…</div></div></article>
+      <article class="panel"><div class="panel-head"><span class="panel-title">即時交通</span><span id="transitUpdated" class="updated-tag">每 30 秒</span></div><div id="transit" class="panel-body"><div class="loading">正在取得到站時間…</div></div></article>
+    </section>
+
+    <section class="grid contact-grid">
+      <article class="panel whatsapp-panel">
+        <div class="panel-head"><span class="panel-title">WhatsApp</span><span id="waMode" class="source">網頁版</span></div>
+        <div class="panel-body wa-body"><div><div class="wa-count"><span id="waUnread">—</span><small> 未讀</small></div><div id="waNote" class="privacy-note">網頁版不會讀取 WhatsApp 資料。</div></div><button id="waOpen" class="wa-button">開啟 WhatsApp ↗</button></div>
+      </article>
+      <article class="panel gmail-panel">
+        <div class="panel-head"><span class="panel-title">Gmail｜最新 10 封未讀郵件</span><span id="gmailUpdated" class="updated-tag">每 5 分鐘</span></div>
+        <div class="panel-body"><div class="gmail-toolbar"><button id="gmailAuth" class="btn primary">連接 Gmail（唯讀）</button><button id="gmailDisconnect" class="btn danger" hidden>中斷連接</button></div><div id="gmailHint" class="privacy-note">只申請 gmail.readonly；權杖只儲存在你的瀏覽器。</div><div id="gmail"><div class="empty">尚未連接 Gmail</div></div></div>
+      </article>
+    </section>
+
+    <section class="grid markets">
+      <article class="panel"><div class="panel-head"><span class="panel-title">港股市場</span><span id="hkMarketUpdated" class="updated-tag">每 60 秒</span></div><div id="hkMarket" class="market-list panel-body"><div class="loading">正在取得市場資料…</div></div></article>
+      <article class="panel"><div class="panel-head"><span class="panel-title">美股市場</span><span id="usMarketUpdated" class="updated-tag">每 60 秒</span></div><div id="usMarket" class="market-list panel-body"><div class="loading">正在取得市場資料…</div></div></article>
+    </section>
+
+    <section class="grid news-grid">
+      <article class="panel"><div class="panel-head"><span class="panel-title">港元外匯</span><span id="fxUpdated" class="updated-tag">每 60 秒</span></div><div id="fx" class="panel-body"><div class="loading">正在取得匯率…</div></div></article>
+      <article class="panel news-panel"><div class="panel-head"><span class="panel-title">香港新聞</span><span id="localNewsUpdated" class="updated-tag">每 60 秒</span></div><div id="localNews"><div class="loading">正在取得新聞…</div></div></article>
+      <article class="panel news-panel"><div class="panel-head"><span class="panel-title">國際及財經新聞</span><span id="worldNewsUpdated" class="updated-tag">每 60 秒</span></div><div id="worldNews"><div class="loading">正在取得新聞…</div></div></article>
+    </section>
+
+    <section class="grid info-grid">
+      <article class="panel setup"><div class="panel-head"><span class="panel-title">快速設定</span><span class="source">首次使用</span></div><div class="panel-body"><div id="runtimeInfo" class="runtime-info"></div><details><summary>Gmail OAuth 設定摘要</summary><ol><li>Google Cloud 建立項目並啟用 Gmail API。</li><li>OAuth 同意畫面加入自己為測試使用者及 <code>gmail.readonly</code>。</li><li>網頁版 Web Client 加入 GitHub Pages 的 origin 為 JavaScript 來源；保留原有來源。</li><li>擴充功能的 Web Client 保留畫面所示 Redirect URI。兩種模式可使用同一個 Web Client。</li><li>在 <code>config.js</code> 填入公開 Client ID，不放任何密碼或 Client Secret。</li></ol></details><p>iPhone：用 Safari 開啟 → 分享 → 加入主畫面。登入須在各瀏覽器分別授權。</p><p>網頁保持開啟才會更新及提示；手機背景、鎖屏或關頁後不保證更新，沒有背景推播。</p><p>完整說明：<a href="README.md" target="_blank" rel="noopener">README.md</a></p></div></article>
+      <article class="panel setup"><div class="panel-head"><span class="panel-title">數據來源及時效</span><span class="source">透明度</span></div><div class="panel-body"><table class="source-table"><thead><tr><th>區塊</th><th>來源</th><th>時效</th></tr></thead><tbody><tr><td>天氣</td><td>香港天文台 API</td><td>準即時；每 60 秒查詢</td></tr><tr><td>交通</td><td>運輸署／九巴／城巴官方 ETA</td><td>每 30 秒查詢</td></tr><tr><td>Gmail</td><td>Gmail API（唯讀）</td><td>每 5 分鐘查詢</td></tr><tr><td>股票</td><td>Yahoo Finance；網頁版經 Jina Reader</td><td>每 60 秒查詢；報價或轉讀快照可延遲</td></tr><tr><td>外匯</td><td>Frankfurter／歐洲央行參考價</td><td>每日參考匯率</td></tr><tr><td>新聞</td><td>港台本地／國際／財經公開頁，經 Jina Reader</td><td>每 60 秒查詢；快照可延遲</td></tr></tbody></table><p>最後更新＝本頁成功讀取時間，不代表來源即時。市場及新聞另列來源時間。免費公開轉讀服務可能快取、限流或暫停，屆時只有受影響項目顯示錯誤。</p></div></article>
+    </section>
+  </main>
+
+  <footer class="ticker-shell"><div class="ticker-label">LIVE</div><div id="tickerTrack" class="ticker-track"><span>正在載入恒指、道指、天氣警告及最新新聞…</span></div></footer>
+</body>
+</html>
