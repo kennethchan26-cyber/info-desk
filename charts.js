@@ -3,7 +3,7 @@
 // Native data: Yahoo's undocumented Spark endpoint via the existing public-data reader.
 window.InfoDeskCharts = (() => {
   const RANGE={"1d":{interval:"5m",label:["即日","DAY"]},"5d":{interval:"5m",label:["5 日","5 DAYS"]},"1mo":{interval:"1d",label:["1 個月","1 MONTH"]},"1y":{interval:"1d",label:["1 年","1 YEAR"]}};
-  const BATCH=8,PERIOD=60000,STAGGER=12000,records=new Map(),mounted=new Map(),inflight=new Map(),lastAttempt=new Map();
+  const BATCH=20,PERIOD=60000,STAGGER=24000,START_DELAY=12000,records=new Map(),mounted=new Map(),inflight=new Map(),lastAttempt=new Map();
   const failureUntil=new Map(),scheduled=new Map(),batchDiagnostics=new Map();let timer=null,modal=null,modalSymbol=null,focusCursor=0,lastFocus=0,observer=null;
   const english=()=>Boolean(window.InfoDeskI18n?.en()),L=(tc,en)=>english()?en:tc;
   const safe=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -65,7 +65,7 @@ window.InfoDeskCharts = (() => {
     if(document.hidden)return;const symbols=allItems().map(x=>x.yahoo);
     for(let i=0;i<symbols.length;i+=BATCH){
       const batch=symbols.slice(i,i+BATCH),id=batch.join(',');if(scheduled.has(id))continue;
-      const handle=setTimeout(()=>{scheduled.delete(id);if(document.hidden)return;const now=Date.now(),due=batch.filter(s=>now-(lastAttempt.get(key(s,'1d'))||0)>=PERIOD-1000&&(failureUntil.get(key(s,'1d'))||0)<=now);if(due.length)fetchBatch(due);},Math.floor(i/BATCH)*STAGGER);scheduled.set(id,handle);
+      const handle=setTimeout(()=>{scheduled.delete(id);if(document.hidden)return;const now=Date.now(),due=batch.filter(s=>now-(lastAttempt.get(key(s,'1d'))||0)>=PERIOD-1000&&(failureUntil.get(key(s,'1d'))||0)<=now);if(due.length)fetchBatch(due);},START_DELAY+Math.floor(i/BATCH)*STAGGER);scheduled.set(id,handle);
     }
     if(modal?.open&&modalSymbol){const range=modal.dataset.range||'1d';if(range!=='1d')ensure(modalSymbol,range);}
   }
