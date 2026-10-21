@@ -4,6 +4,14 @@ window.InfoDeskI18n = (() => {
   let language='tc',revision=0;
   try{language=localStorage.getItem('dashboard_language')==='en'?'en':'tc'}catch{}
   const words={
+    '交通 30 秒；天氣、股票、外匯、本地及國際新聞 60 秒；美股新聞 5 分鐘；Gmail 只在展開時每 5 分鐘；熱搜 15 分鐘。加密貨幣收起時停線。公開數據離線時顯示上次資料，Gmail 不快取。手機背景或關頁後不保證更新，沒有背景推播。':'Transport 30s; weather, stocks, FX, local and world news 60s; CNBC 5min; Gmail 5min only while expanded; trends 15min. Crypto disconnects when collapsed. Public data use the last saved copy offline; Gmail is never cached. No guaranteed background updates or push.',
+    '快捷列':'QUICK LINKS','安裝':'INSTALL','有新版本，按此更新':'NEW VERSION — CLICK TO UPDATE','快取':'CACHED',
+    '按到站排序':'ARRIVAL ORDER','固定次序':'FIXED ORDER','暫無班次':'NO UPCOMING SERVICE',
+    '美股新聞':'US MARKET NEWS','官方 RSS · 英文原文':'OFFICIAL RSS · ORIGINAL ENGLISH',
+    '全部':'ALL','有線':'i-CABLE','其他':'OTHER','此來源暫時未能取得數據':'This source is temporarily unavailable',
+    'Safari：分享 → 加入主畫面':'Safari: Share → Add to Home Screen',
+    'Chrome：選單 → 投放、儲存及分享 → 安裝網頁為應用程式':'Chrome: Menu → Cast, save and share → Install page as app',
+    '離線介面未能儲存；請保持網絡連線並重新整理。':'Offline interface could not be saved; stay online and reload.',
     '港股':'HK MARKET','美股':'US MARKET','下一事件':'NEXT EVENT','午休':'LUNCH BREAK','午市開市':'AFTERNOON OPEN','開市':'OPEN','收市':'CLOSE','次搜尋':'SEARCHES','新上榜熱搜':'NEW TRENDING SEARCH',
     '香港':'HONG KONG','美國':'UNITED STATES','靜音':'MUTE','桌面通知':'DESKTOP ALERTS','測試提示':'TEST ALERTS',
     '開市與收市倒數':'MARKET COUNTDOWNS','下一個交易時刻':'NEXT MARKET EVENT','港股 × 美股':'HONG KONG × US',

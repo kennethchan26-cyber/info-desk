@@ -6,7 +6,7 @@ window.InfoDeskView = (() => {
   let quoteScheduled=false;
   function queueQuotes(){if(quoteScheduled)return;quoteScheduled=true;queueMicrotask(()=>{quoteScheduled=false;renderQuotes()})}
   let slide=0,paused=false,locked=false,rotateAt=Date.now()+15000,lowerIndex=0,latestTransit=[],lastClockTick=null;
-  const names=['市場','交通','天氣','市場','熱搜','新聞'];
+  const names=['市場','交通','天氣','市場','熱搜','新聞','美股'];
   const text=v=>window.InfoDeskI18n?.t(v)??v,english=()=>window.InfoDeskI18n?.en()||false;
   const mobile=()=>matchMedia('(max-width:767px)').matches;
   function observe(id,fn){const node=Q(id);new MutationObserver(fn).observe(node,{childList:true});fn();}
@@ -40,11 +40,11 @@ window.InfoDeskView = (() => {
     all('.ticker-set').forEach((set,i)=>set.querySelectorAll('.ticker-item').forEach(e=>{const raw=valueOf(e,'.ticker-value');if(raw&&raw!=='—')flash(e,'ticker:'+i+':'+valueOf(e,'b'),Number(raw.replaceAll(',','')))}));
   }
   function renderWeather(){const temps=all('#weather .location').map(e=>{flash(e,'weather:'+valueOf(e,'.location-name'),parseFloat(valueOf(e,'.temp')));return `<span>${esc(valueOf(e,'.location-name').replace('氣象站','').replace('數碼港附近：',''))}<strong>${esc(valueOf(e,'.temp'))}</strong></span>`});Q('#weatherCompact').innerHTML=temps.length?temps.join('')+`<span class="warning-mini">${esc(state.warningText)}</span>`:`<span>${Q('#weather .error')?'暫時未能取得數據':'正在取得天文台資料…'}</span>`;}
-  function transit(results){latestTransit=CFG.TRANSIT.flatMap((r,i)=>results[i]?.status==='fulfilled'?results[i].value.slice(0,1).map(eta=>({r,eta})):[]);renderNextBus();
-    all('#transit .route-card').forEach((row,i)=>row.querySelectorAll('.eta').forEach((e,j)=>{const n=results[i]?.value?.[j]?.mins;if(Number.isFinite(n))flash(e,'eta:'+i+':'+j,n)}));
+  function transit(results){latestTransit=(state.transitOrder.length?state.transitOrder:CFG.TRANSIT.map(r=>r.key)).flatMap(key=>{const i=CFG.TRANSIT.findIndex(r=>r.key===key),r=CFG.TRANSIT[i];return results[i]?.status==='fulfilled'?results[i].value.slice(0,1).map(eta=>({r,eta})):[]});renderNextBus();
+    all('#transit .route-card').forEach(row=>row.querySelectorAll('.eta').forEach((e,j)=>{const i=CFG.TRANSIT.findIndex(r=>r.key===row.dataset.routeKey),n=results[i]?.value?.[j]?.mins;if(Number.isFinite(n))flash(e,'eta:'+row.dataset.routeKey+':'+j,n)}));
   }
-  function renderNextBus(){const next=latestTransit.filter(x=>new Date(x.eta.iso).getTime()>Date.now()-60000).sort((a,b)=>new Date(a.eta.iso)-new Date(b.eta.iso))[0];
-    Q('#nextBus').innerHTML=next?`<span>${text('下一班車')}</span><b>${esc(next.r.route)} ${english()?'TO '+esc(next.r.destinationEn):'往'+esc(next.r.destination)}</b><strong>${Math.max(0,Math.ceil((new Date(next.eta.iso)-Date.now())/60000))}<small> ${text('分鐘')}</small></strong>`:`<span>${text('下一班車')}</span><b>${text('暫無到站資料')}</b>`;
+  function renderNextBus(){const next=latestTransit[0],cached=window.InfoDeskNetwork?.stale('transit');
+    Q('#nextBus').innerHTML=next?`<span>${text(cached?'快取':'下一班車')}</span><b>${esc(next.r.route)} ${english()?'TO '+esc(next.r.destinationEn):'往'+esc(next.r.destination)}</b><strong>${cached?esc(next.eta.time):Math.max(0,Math.ceil((new Date(next.eta.iso)-Date.now())/60000))}<small> ${cached?'HKT':text('分鐘')}</small></strong>`:`<span>${text('下一班車')}</span><b>${text('暫無到站資料')}</b>`;
   }
   function countdownHTML(s){if(s.unknown)return `<div class="countdown-label">${text(s.name)}<span class="market-state">${text('未確認')}</span></div><div class="countdown-number">—</div><div class="countdown-hours">${text(s.reason)}</div>`;
     const date=english()?window.InfoDeskI18n.date(s.next.time):C.dateKey(s.next.time,'Asia/Hong_Kong').split('-').reverse().join('/');
@@ -61,11 +61,14 @@ window.InfoDeskView = (() => {
     // Pause while a person is interacting with a stage link, to avoid moving their focus.
     if(!paused&&now>=rotateAt&&!Q('.stage-deck').contains(document.activeElement)){showSlide((slide+1)%all('.stage').length);rotateAt=now+15000;}
   }
-  function lowerThird(){if(state.alertShowing)return;const nodes=all('#localNews .news-item,#worldNews .news-item');nodes.sort((a,b)=>Number(b.dataset.published)-Number(a.dataset.published));const news=[...new Map(nodes.map(e=>[e.href,e])).values()];
+  function lowerThird(){if(state.alertShowing)return;const nodes=all('#localNews .news-item,#worldNews .news-item,#usNews .news-item');nodes.sort((a,b)=>Number(b.dataset.published)-Number(a.dataset.published));const news=[...new Map(nodes.map(e=>[e.href,e])).values()];
     const data=quotes().filter(q=>q.price),slot=lowerIndex++;let html,category='新聞';if(slot%4===3&&data.length){const q=data[Math.floor(slot/4)%data.length],price=Number(q.price.replaceAll(',','')),pct=parseFloat(q.pct),delta=Number.isFinite(q.delta)?q.delta:price-price/(1+pct/100);category='市場';html=`<div class="lower-data"><b>${esc(q.name)}</b><strong>${esc(q.price)}</strong><span class="${q.cls}">${arrow(q)} ${Math.abs(delta).toFixed(2)}　${Math.abs(pct).toFixed(2)}%</span></div>`;}else if(slot%4===2&&window.InfoDeskSignals?.getTrends().length){const trends=window.InfoDeskSignals.getTrends(),t=trends[Math.floor(slot/4)%trends.length];category='熱搜';html=`<a href="${esc(t.articles[0]?.link||t.link)}" target="_blank" rel="noopener noreferrer">${esc(t.title)}${t.traffic?' · '+esc(t.traffic)+' 次搜尋':''}</a>`;}else if(news.length){const n=news[slot%news.length];html=`<a href="${esc(n.href)}" target="_blank" rel="noopener noreferrer">${esc(valueOf(n,'.news-title'))}</a>`;}else{category=names[slide];html=esc(state.warningText||'你嘅世界，一眼掌握。');}
+    if(category==='新聞'&&news[slot%news.length]?.closest('#usNews'))category='美股';
     Q('#lowerCategory').textContent=text(category);Q('#lowerHeadline').innerHTML=html.replace(' 次搜尋',english()?' SEARCHES':' 次搜尋');Q('#lowerHeadline').classList.remove('wipe');void Q('#lowerHeadline').offsetWidth;Q('#lowerHeadline').classList.add('wipe');
   }
   function init(){observe('#hkMarket',queueQuotes);observe('#usMarket',queueQuotes);observe('#weather',renderWeather);observe('#fx',()=>{all('#fx .fx').forEach(e=>flash(e,'fx:'+e.dataset.code,+valueOf(e,'.fx-rate')));updateTicker();});
+    const fit=()=>{if(mobile())return;const top=Q('.stage-deck').getBoundingClientRect().top+window.scrollY,footer=Q('.lower-third').getBoundingClientRect().height+Q('.ticker-shell').getBoundingClientRect().height;document.documentElement.style.setProperty('--deck-height',Math.max(250,window.innerHeight-top-footer-34)+'px')};
+    new ResizeObserver(fit).observe(Q('.topbar'));new ResizeObserver(fit).observe(Q('.quickbar'));new ResizeObserver(fit).observe(Q('#appNotices'));window.addEventListener('resize',fit);fit();
     document.addEventListener('infodesk:language',()=>{renderQuotes();renderWeather();renderNextBus();marketTick();rotationTick();lowerThird()});
     all('[data-slide]').forEach(e=>e.addEventListener('click',()=>{if(locked&&!mobile())return;showSlide(+e.dataset.slide);rotateAt=Date.now()+15000;}));
     Q('#pauseRotation').onclick=()=>{paused=!paused;Q('#pauseRotation').setAttribute('aria-pressed',String(paused));Q('#pauseRotation').textContent=paused?'繼續輪播':'暫停輪播';rotateAt=Date.now()+15000;rotationTick();};

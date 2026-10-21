@@ -75,6 +75,17 @@ window.DASHBOARD_CONFIG = {
   ],
 
   NEWS: {
+    // Google News indexing can be delayed; these public feeds use the same Reader bridge as local news.
+    SEARCH_LOCAL: [
+      {id:"now",rss:"https://news.google.com/rss/search?q=site%3Anews.now.com&hl=zh-HK&gl=HK&ceid=HK%3Azh-Hant"},
+      {id:"cable",rss:"https://news.google.com/rss/search?q=site%3Ai-cable.com&hl=zh-HK&gl=HK&ceid=HK%3Azh-Hant"}
+    ],
+    US: [
+      {name:"Top News",rss:"https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=100003114"},
+      {name:"Investing",rss:"https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=15839069"},
+      {name:"Economy",rss:"https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=20910258"},
+      {name:"Asia-Pacific",rss:"https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=19832390"}
+    ],
     // 公開新聞列表經 Jina Reader 轉讀；不傳送 Gmail 權杖或私人資料。
     LOCAL: ["https://news.rthk.hk/rthk/ch/latest-news/local.htm"],
     WORLD: ["https://news.rthk.hk/rthk/ch/latest-news/world-news.htm", "https://news.rthk.hk/rthk/ch/latest-news/finance.htm"],

@@ -12,7 +12,8 @@ const state = {
   suppressAlerts: false,
   warningText: "暫無天氣警告", headlines: [], indices: {},
   alertQueue: [], alertShowing: false, alertTimer: null,
-  gmailToken: null, gmailExpiry: 0, gmailTimer: null,
+  gmailToken: null, gmailExpiry: 0, gmailTimer: null, gmailOpen:false, gmailGeneration:0, gmailAbort:null, gmailBusy:false,
+  transitOrder:[], transitSorted:true,
   weatherCache:{}, weatherPending:{}, newsCache:{}, newsPending:{}, transitResults:null, marketBatch:null, fxRows:null, stamps:{}
 };
 
@@ -27,15 +28,16 @@ function tickClock(){
   $("#clock").textContent = new Intl.DateTimeFormat("zh-HK",{timeZone:HK_TZ,hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false}).format(now);
   $("#date").textContent = UI?.date ? UI.date(now) : new Intl.DateTimeFormat("en-GB",{timeZone:HK_TZ,day:"2-digit",month:"2-digit",year:"numeric"}).format(now);
 }
-function setStamp(id){state.stamps[id]=Date.now();state.lastSuccess=Date.now();renderStamps();}
-function renderStamps(){for(const [id,time]of Object.entries(state.stamps))$(id).textContent=T(`${hkTime(time)} 更新`);$("#lastUpdate").textContent=T(state.lastSuccess?`最後更新：${hkTime(state.lastSuccess)} HKT`:'最後更新：等待資料');}
-async function getJSON(url, timeout=18000, options={}){const ctl=new AbortController();const timer=setTimeout(()=>ctl.abort(),timeout);try{const r=await fetch(url,{cache:"no-store",signal:ctl.signal,...options});if(!r.ok)throw new Error(`HTTP ${r.status}`);return await r.json();}finally{clearTimeout(timer)}}
+const stampGroup=id=>/Market/.test(id)?'markets':id.replace(/^#|Updated$/g,'');
+function setStamp(id){state.stamps[id]=id==='#gmailUpdated'?Date.now():(window.InfoDeskNetwork?.stamp(stampGroup(id))||Date.now());state.lastSuccess=Math.max(...Object.values(state.stamps));renderStamps();}
+function renderStamps(){for(const [id,time]of Object.entries(state.stamps))$(id).textContent=T(`${hkTime(time)} 更新`)+(window.InfoDeskNetwork?.stale(stampGroup(id))?' · '+T('快取'):'');$("#lastUpdate").textContent=T(state.lastSuccess?`最後更新：${hkTime(state.lastSuccess)} HKT`:'最後更新：等待資料');}
+async function getJSON(url, timeout=18000, options={}){const ctl=new AbortController();const timer=setTimeout(()=>ctl.abort(),timeout);try{const r=await (window.InfoDeskNetwork?.fetch||fetch)(url,{cache:"no-store",signal:ctl.signal,...options});if(!r.ok)throw new Error(`HTTP ${r.status}`);return await r.json();}finally{clearTimeout(timer)}}
 const readerQueue=[];let readerActive=0;
 function drainReader(){
   while(readerActive<3&&readerQueue.length){const task=readerQueue.shift();readerActive++;task().finally(()=>{readerActive--;drainReader()})}
 }
 function fetchJinaText(url,timeout=18000,headers={}){
-  return new Promise((resolve,reject)=>{readerQueue.push(async()=>{const ctl=new AbortController();const timer=setTimeout(()=>ctl.abort(),timeout);try{const r=await fetch(url,{cache:"no-store",credentials:"omit",referrerPolicy:"no-referrer",headers,signal:ctl.signal});if(!r.ok)throw new Error(`公開資料轉讀 HTTP ${r.status}`);resolve(await r.text())}catch(e){reject(e)}finally{clearTimeout(timer)}});drainReader()});
+  return new Promise((resolve,reject)=>{readerQueue.push(async()=>{const ctl=new AbortController();const timer=setTimeout(()=>ctl.abort(),timeout);try{const r=await (window.InfoDeskNetwork?.fetch||fetch)(url,{cache:"no-store",credentials:"omit",referrerPolicy:"no-referrer",headers,signal:ctl.signal});if(!r.ok)throw new Error(`公開資料轉讀 HTTP ${r.status}`);resolve(await r.text())}catch(e){reject(e)}finally{clearTimeout(timer)}});drainReader()});
 }
 
 function previous(key){return baselines.has(key)?baselines.get(key):null;}
@@ -54,12 +56,12 @@ async function desktopNotify(title,message){
   }catch{}
 }
 function enqueueAlert(type,text,priority=5){
-  if(state.suppressAlerts)return;
-  state.alertQueue.push({type:T(type),text:T(text),priority});state.alertQueue.sort((a,b)=>a.priority-b.priority);showNextAlert();
+  if(state.suppressAlerts||navigator.onLine===false||(type==='新 Gmail'&&!state.gmailOpen))return;
+  state.alertQueue.push({kind:type,type:T(type),text:T(text),priority});state.alertQueue.sort((a,b)=>a.priority-b.priority);showNextAlert();
 }
 function showNextAlert(){
   if(state.alertShowing||!state.alertQueue.length)return;
-  const item=state.alertQueue.shift();state.alertShowing=true;$("#breakingType").textContent=item.type;$("#breakingText").textContent=item.text;$("#breaking").hidden=false;beep();desktopNotify(item.type,item.text);state.alertTimer=setTimeout(closeAlert,10000);
+  const item=state.alertQueue.shift();if(item.kind==='新 Gmail'&&!state.gmailOpen){showNextAlert();return}state.alertKind=item.kind;state.alertShowing=true;$("#breakingType").textContent=item.type;$("#breakingText").textContent=item.text;$("#breaking").hidden=false;beep();desktopNotify(item.type,item.text);state.alertTimer=setTimeout(closeAlert,10000);
 }
 function closeAlert(){clearTimeout(state.alertTimer);$("#breaking").hidden=true;state.alertShowing=false;setTimeout(showNextAlert,180)}
 function testAlerts(){enqueueAlert("測試提示","這是測試：橫額會在 10 秒後收起，亦可按 × 關閉。",1);enqueueAlert("測試提示","第二條測試：佇列依次顯示，沒有重疊。",5)}
@@ -80,6 +82,7 @@ function updateTicker(){
 
 async function loadWeather(){
   const requested=lang();if(state.weatherPending[requested])return state.weatherPending[requested];
+  window.InfoDeskNetwork?.begin('weather');
   const base=`https://data.weather.gov.hk/weatherAPI/opendata/weather.php?lang=${requested}&dataType=`;
   const work=(async()=>{try{
     const data=await Promise.all([getJSON(base+"rhrread"),getJSON(base+"flw"),getJSON(base+"fnd"),getJSON(base+"warnsum")]);
@@ -89,8 +92,9 @@ async function loadWeather(){
 function renderWeatherData([now,local,nine,warnings]){
     const temp=name=>now.temperature?.data?.find(x=>x.place===name)?.value??"—";const rh=now.humidity?.data?.[0]?.value??"—";
     const active=Object.values(warnings||{}).filter(x=>x&&x.actionCode!=="CANCEL");const names=active.map(x=>x.name||x.code).filter(Boolean);
-    state.warningText=names.length?names.join(L('、',' / ')):(now.warningMessage?.join(L('、',' / '))||T("暫無天氣警告"));
-    if(changed("weather_warning_"+lang(),state.warningText))enqueueAlert("天氣警告",L('警告更新：','WARNING UPDATE: ')+state.warningText,1);
+    const warningMessages=Array.isArray(now.warningMessage)?now.warningMessage:(now.warningMessage?[String(now.warningMessage)]:[]);
+    state.warningText=names.length?names.join(L('、',' / ')):(warningMessages.join(L('、',' / '))||T("暫無天氣警告"));
+    if(changed("weather_warning_"+lang(),state.warningText)&&!window.InfoDeskNetwork?.stale('weather'))enqueueAlert("天氣警告",L('警告更新：','WARNING UPDATE: ')+state.warningText,1);
     const days=(nine.weatherForecast||[]).slice(0,3).map(d=>`<div class="day"><div class="day-date">${esc(UI?.en()?UI.day(d.forecastDate):String(d.forecastDate).slice(6,8)+"/"+String(d.forecastDate).slice(4,6))}</div><div class="day-temp">${esc(d.forecastMintemp?.value)}–${esc(d.forecastMaxtemp?.value)}°</div><div class="day-desc">${esc(d.forecastWeather)}</div><div class="day-rh">${L('濕度','HUMIDITY')} ${esc(d.forecastMinrh?.value)}–${esc(d.forecastMaxrh?.value)}%</div></div>`).join("");
     const locations=[[L('沙田氣象站','SHA TIN'),L('沙田','Sha Tin')],[L('數碼港附近：黃竹坑站','NEAR CYBERPORT: WONG CHUK HANG'),L('黃竹坑','Wong Chuk Hang')]];
     $("#weather").innerHTML=`<div class="weather-now">${locations.map(([name,station])=>`<div class="location"><div class="location-name">${name}</div><div class="temp">${esc(temp(station))}°</div><div class="humidity">${L('濕度','HUMIDITY')} ${esc(rh)}% <small>${L('（香港天文台站）','(HKO STATION)')}</small></div></div>`).join('')}</div><div class="warning-box ${names.length||now.warningMessage?.length?"":"none"}">${esc(state.warningText)}</div><div class="summary"><b>${L('今日概況：','TODAY: ')}</b>${esc(local.forecastDesc||local.generalSituation||L('暫未提供','Not available yet'))}</div><div class="forecast">${days}</div><div class="fx-note">${L('天文台即時 API 只提供香港天文台站相對濕度；兩地均如實標示該站數值。','The live API provides relative humidity at HKO station only; both locations are labelled accordingly.')}</div>`;
@@ -111,16 +115,23 @@ const etaHTML=e=>`<span class="eta ${e.mins<=3?"soon":""}">${e.mins<=0?T("即到
 const routeDestination=r=>L(r.destination,r.destinationEn||r.destination);
 const routeStop=r=>L(r.stopName,r.stopNameEn||r.stopName);
 async function loadTransit(){
+  window.InfoDeskNetwork?.begin('transit');
   const results=await Promise.allSettled(CFG.TRANSIT.map(fetchTransit));
-  state.transitResults=results;renderTransitData(results);
+  for(const x of results)if(x.status==='fulfilled')x.value.sort((a,b)=>Date.parse(a.iso)-Date.parse(b.iso));
+  state.transitResults=results;state.transitOrder=window.InfoDeskTransitOrder(CFG.TRANSIT,results,state.transitOrder,state.transitSorted);renderTransitData(results,true);
   if(results.some(x=>x.status==="fulfilled"))setStamp("#transitUpdated");
 }
-function renderTransitData(results){
-  $("#transit").innerHTML=`<div class="transit-list">${CFG.TRANSIT.map((r,i)=>{const x=results[i];let body='<span class="route-error">暫時未能取得數據</span>';if(x.status==="fulfilled"){body=x.value.length?x.value.slice(0,3).map(etaHTML).join(""):'<span class="route-error">暫無班次資料</span>';transitAlert(r,x.value[0])}return`<div class="route-card"><div class="route-identity"><div class="route-no">${esc(r.route)}</div><div class="operator">${esc(T(r.operator))}</div></div><div class="route-meta"><div class="route-dest">${L('往','TO')} ${esc(routeDestination(r))}</div><div class="route-stop">${esc(routeStop(r))}</div></div><div class="etas">${body}</div></div>`}).join("")}</div>`;
+function renderTransitData(results,animate=false){
+  const old=new Map([...document.querySelectorAll('#transit .route-card')].map(e=>[e.dataset.routeKey,e.getBoundingClientRect().top]));
+  const order=state.transitOrder.length?state.transitOrder:CFG.TRANSIT.map(r=>r.key);
+  $("#transit").innerHTML=`<div class="transit-list">${order.map(key=>{const i=CFG.TRANSIT.findIndex(r=>r.key===key),r=CFG.TRANSIT[i],x=results[i],has=x?.status==='fulfilled'&&x.value.length;let body=has?x.value.slice(0,3).map(etaHTML).join(''):`<span class="route-error">${T('暫無班次')}${x?.status==='rejected'?`<small>${T('暫時未能取得數據')}</small>`:''}</span>`;if(animate&&has&&!window.InfoDeskNetwork?.stale('transit'))transitAlert(r,x.value[0]);return`<div class="route-card ${has?'':'no-service'}" data-route-key="${esc(key)}"><div class="route-identity"><div class="route-no">${esc(r.route)}</div><div class="operator">${esc(T(r.operator))}</div></div><div class="route-meta"><div class="route-dest">${L('往','TO')} ${esc(routeDestination(r))}</div><div class="route-stop">${esc(routeStop(r))}</div></div><div class="etas">${body}</div></div>`}).join("")}</div>`;
+  if(animate&&!matchMedia('(prefers-reduced-motion:reduce)').matches)document.querySelectorAll('#transit .route-card').forEach(e=>{const from=old.get(e.dataset.routeKey),to=e.getBoundingClientRect().top;if(Number.isFinite(from)&&from!==to)e.animate([{transform:`translateY(${from-to}px)`},{transform:'translateY(0)'}],{duration:400,easing:'cubic-bezier(.2,.7,.2,1)'})});
   window.InfoDeskView?.transit(results);
 }
+function setupTransitSort(){state.transitSorted=localStorage.getItem('dashboard_transit_sort')!=='fixed';const render=()=>{$('#transitSort').textContent=T(state.transitSorted?'按到站排序':'固定次序');$('#transitSort').setAttribute('aria-pressed',String(state.transitSorted))};render();$('#transitSort').onclick=()=>{state.transitSorted=!state.transitSorted;localStorage.setItem('dashboard_transit_sort',state.transitSorted?'arrival':'fixed');render();if(state.transitResults){state.transitOrder=window.InfoDeskTransitOrder(CFG.TRANSIT,state.transitResults,state.transitOrder,state.transitSorted);renderTransitData(state.transitResults,true)}};document.addEventListener('infodesk:language',render)}
 
 async function loadFx(){
+  window.InfoDeskNetwork?.begin('fx');
   try{const rows=await getJSON(window.InfoDeskFX.query(CFG.FX));if(!Array.isArray(rows))throw new Error('invalid FX');state.fxRows=window.InfoDeskFX.convert(rows,CFG.FX.CURRENCIES);if(!state.fxRows.some(x=>!x.error))throw new Error('missing FX');renderFx();setStamp('#fxUpdated')}catch{$('#fx').innerHTML='<div class="error">暫時未能取得數據</div>'}
 }
 function renderFx(){if(!state.fxRows)return;
@@ -156,7 +167,7 @@ async function loadMarket(items,target,stamp,batch=null,touchStamp=true){
   for(const q of good){if(q.alertIndex){state.indices[q.alertIndex]={price:q.price.toLocaleString("en-HK",{maximumFractionDigits:2}),change:`${q.pct>0?"+":""}${q.pct.toFixed(2)}%`};const over=Math.abs(q.pct)>2?`${q.pct>0?"up":"down"}:${q.pct.toFixed(1)}`:"normal";const key=`market_${q.alertIndex}`;const old=previous(key);remember(key,over);if(old!==null&&over!=="normal"&&!old.startsWith(over.split(":")[0]))enqueueAlert("市場異動",L(`${q.name} 單日${q.pct>0?"上升":"下跌"} ${Math.abs(q.pct).toFixed(2)}%`,`${T(q.name)} ${q.pct>0?'UP':'DOWN'} ${Math.abs(q.pct).toFixed(2)}% TODAY`),4)}}
   updateTicker();if(good.length&&touchStamp)setStamp(stamp);
 }
-async function loadMarkets(){const batch=await fetchQuoteBatch([...CFG.HK_MARKET,...CFG.US_MARKET]);state.marketBatch=batch;await renderMarkets();}
+async function loadMarkets(){window.InfoDeskNetwork?.begin('markets');const batch=await fetchQuoteBatch([...CFG.HK_MARKET,...CFG.US_MARKET]);state.marketBatch=batch;await renderMarkets();}
 async function renderMarkets(touchStamp=true){if(!state.marketBatch)return;await Promise.allSettled([loadMarket(CFG.HK_MARKET,"#hkMarket","#hkMarketUpdated",state.marketBatch,touchStamp),loadMarket(CFG.US_MARKET,"#usMarket","#usMarketUpdated",state.marketBatch,touchStamp)])}
 
 function parseReaderMarkdown(text,requested='tc'){
@@ -173,6 +184,7 @@ function parseReaderMarkdown(text,requested='tc'){
   return rows.sort((a,b)=>b.published-a.published);
 }
 async function loadOneNews(feeds,target,stamp,key,requested=lang()){
+  window.InfoDeskNetwork?.begin(key==='local'?'localNews':'worldNews');
   try{
     const results=await Promise.allSettled(feeds.map(async feed=>{const rows=parseReaderMarkdown(await fetchJinaText("https://r.jina.ai/"+feed,requested==='en'?35000:18000,requested==='en'?{'X-Engine':'browser','X-Respond-With':'markdown','X-No-Cache':'true'}:{}),requested);if(!rows.length)throw new Error("empty");return rows}));
     const all=results.filter(x=>x.status==="fulfilled").flatMap(x=>x.value);
@@ -189,12 +201,31 @@ function renderNewsGroup({items,partial},target,key,requested){
     if(old!==null){const oldSet=new Set(old.split("||"));items.filter(x=>!oldSet.has(x.link)).slice(0,3).forEach(x=>enqueueAlert("最新新聞",x.title,5))}
     state.headlines=Object.values(state.newsCache[requested]||{}).flatMap(x=>x.items.slice(0,4).map(x=>x.title));updateTicker();
 }
-async function loadNews(){const requested=lang();if(state.newsPending[requested])return state.newsPending[requested];const work=Promise.allSettled([loadOneNews(requested==='en'?CFG.NEWS.EN_LOCAL:CFG.NEWS.LOCAL,"#localNews","#localNewsUpdated","local",requested),loadOneNews(requested==='en'?CFG.NEWS.EN_WORLD:CFG.NEWS.WORLD,"#worldNews","#worldNewsUpdated","world",requested)]).finally(()=>delete state.newsPending[requested]);state.newsPending[requested]=work;return work;}
+async function loadNews(){const requested=lang();if(state.newsPending[requested])return state.newsPending[requested];const work=Promise.allSettled([window.InfoDeskNews.loadLocal(requested),loadOneNews(requested==='en'?CFG.NEWS.EN_WORLD:CFG.NEWS.WORLD,"#worldNews","#worldNewsUpdated","world",requested)]).finally(()=>delete state.newsPending[requested]);state.newsPending[requested]=work;return work;}
 
-function startGmailPolling(){clearInterval(state.gmailTimer);state.gmailTimer=setInterval(loadGmail,300000)}
+function startGmailPolling(){clearInterval(state.gmailTimer);state.gmailTimer=null;if(state.gmailOpen&&state.gmailToken)state.gmailTimer=setInterval(loadGmail,300000)}
 function saveToken(token,expiresIn=3600){if(typeof token!=="string"||!token||!Number.isFinite(Number(expiresIn))||Number(expiresIn)<=60)throw new Error("授權回傳無效，請重新連接");state.gmailToken=token;state.gmailExpiry=Date.now()+(Number(expiresIn)-60)*1000;localStorage.setItem("dashboard_gmail_token",token);localStorage.setItem("dashboard_gmail_expiry",String(state.gmailExpiry));$("#gmailDisconnect").hidden=false;startGmailPolling()}
-function restoreToken(){const token=localStorage.getItem("dashboard_gmail_token");const expiry=Number(localStorage.getItem("dashboard_gmail_expiry"));if(token&&expiry>Date.now()){state.gmailToken=token;state.gmailExpiry=expiry;$("#gmailDisconnect").hidden=false;return true}return false}
-function setGmailHint(text,isError=false){$("#gmailHint").innerHTML=text;$("#gmailHint").style.color=isError?"#ff8793":""}
+function restoreToken(){const token=localStorage.getItem("dashboard_gmail_token");const expiry=Number(localStorage.getItem("dashboard_gmail_expiry"));if(token&&expiry>Date.now()){state.gmailToken=token;state.gmailExpiry=expiry;$("#gmailDisconnect").hidden=false;return true}localStorage.removeItem('dashboard_gmail_token');localStorage.removeItem('dashboard_gmail_expiry');state.gmailToken=null;return false}
+function setGmailHint(text,isError=false){if(!state.gmailOpen)return;$("#gmailHint").innerHTML=text;$("#gmailHint").hidden=false;$("#gmailHint").style.color=isError?"#ff8793":""}
+function gmailAuthOnly(){for(const id of ['#gmailHint','#gmail','#gmailColumns','#gmailUpdated','#gmailDisconnect'])$(id).hidden=true;$('#gmailAuth').hidden=false;$('#gmailHint').textContent='';$('#gmail').textContent='';}
+function gmailConnectedUI(){for(const id of ['#gmailHint','#gmail','#gmailColumns','#gmailUpdated','#gmailDisconnect'])$(id).hidden=false;$('#gmailAuth').hidden=true;}
+function setGmailExpanded(open,persist=true){
+  state.gmailOpen=Boolean(open);state.gmailGeneration++;state.gmailAbort?.abort();state.gmailAbort=null;state.gmailBusy=false;
+  clearInterval(state.gmailTimer);state.gmailTimer=null;baselines.delete('gmail_ids');
+  if(persist)localStorage.setItem('dashboard_gmail_open',open?'1':'0');
+  $('#gmailToggle').setAttribute('aria-expanded',String(Boolean(open)));$('#gmailContent').hidden=!open;$('.gmail-panel').classList.toggle('collapsed',!open);
+  state.alertQueue=state.alertQueue.filter(x=>x.kind!=='新 Gmail');if(state.alertShowing&&state.alertKind==='新 Gmail')closeAlert();
+  if(!open)return;
+  if(restoreToken()){gmailConnectedUI();loadGmail();startGmailPolling()}else gmailAuthOnly();
+  if(persist&&globalThis.matchMedia?.('(max-width:767px)').matches)requestAnimationFrame(()=>$('.gmail-panel').scrollIntoView({block:'center',behavior:'smooth'}));
+  // No OAuth SDK or identity request until an explicit Connect click.
+}
+function setupMessagePanels(){
+  $('#gmailToggle').onclick=()=>setGmailExpanded(!state.gmailOpen);
+  setGmailExpanded(localStorage.getItem('dashboard_gmail_open')==='1',false);
+  const wa=open=>{$('#waToggle').setAttribute('aria-expanded',String(open));$('#waContent').hidden=!open;$('.whatsapp-panel').classList.toggle('collapsed',!open)};
+  wa(localStorage.getItem('dashboard_whatsapp_open')==='1');$('#waToggle').onclick=()=>{const open=$('#waContent').hidden;wa(open);localStorage.setItem('dashboard_whatsapp_open',open?'1':'0');if(open&&globalThis.matchMedia?.('(max-width:767px)').matches)requestAnimationFrame(()=>$('.whatsapp-panel').scrollIntoView({block:'center',behavior:'smooth'}))};
+}
 let gmailWebClient=null,gmailWebPreparing=null;
 function prepareGmailWeb(){
   if(gmailWebClient)return Promise.resolve();if(gmailWebPreparing)return gmailWebPreparing;
@@ -235,13 +266,22 @@ async function connectGmailExtension(){
     saveToken(p.get("access_token"),p.get("expires_in"));await loadGmail();
   }catch(e){setGmailHint(`連接失敗：${esc(e.message)}`,true)}finally{$("#gmailAuth").disabled=false}
 }
-async function gmailFetch(path){const r=await fetch("https://gmail.googleapis.com/gmail/v1/users/me/"+path,{headers:{Authorization:`Bearer ${state.gmailToken}`}});if(r.status===401){disconnectGmail(false);throw new Error("登入已逾時，請重新連接 Gmail")}if(!r.ok)throw new Error(`Gmail API ${r.status}`);return r.json()}
+async function gmailFetch(path,signal){const r=await fetch("https://gmail.googleapis.com/gmail/v1/users/me/"+path,{cache:'no-store',signal,headers:{Authorization:`Bearer ${state.gmailToken}`}});if(r.status===401){await disconnectGmail(false);throw new Error("登入已逾時，請重新連接 Gmail")}if(!r.ok)throw new Error(`Gmail API ${r.status}`);return r.json()}
 async function loadGmail(){
-  if(!state.gmailToken)return;
-  if(state.gmailExpiry<=Date.now()){await disconnectGmail(false);setGmailHint("登入已逾時，請按「連接 Gmail」重新授權。",true);return}
-  try{const list=await gmailFetch("messages?q=is%3Aunread&maxResults=10");const msgs=await Promise.all((list.messages||[]).map(x=>gmailFetch(`messages/${x.id}?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date`)));const rows=msgs.map(m=>{const h=Object.fromEntries((m.payload?.headers||[]).map(x=>[x.name.toLowerCase(),x.value]));return{id:m.id,sender:h.from||"（未知寄件人）",subject:h.subject||"（沒有主旨）",date:h.date||Number(m.internalDate),thread:m.threadId}}).sort((a,b)=>new Date(b.date)-new Date(a.date));$("#gmail").innerHTML=rows.length?`<div class="mail-list">${rows.map(m=>`<a class="mail" href="https://mail.google.com/mail/u/0/#inbox/${esc(m.thread)}" target="_blank" rel="noopener"><span class="sender">${esc(m.sender)}</span><span class="subject">${esc(m.subject)}</span><span class="mail-time" data-datetime="${new Date(m.date).getTime()}">${esc(hkDateTime(m.date))}</span></a>`).join("")}</div>`:'<div class="empty">目前沒有未讀郵件</div>';const ids=rows.map(x=>x.id).join(",");const old=previous("gmail_ids");remember("gmail_ids",ids);if(old!==null){const oldSet=new Set(old.split(","));rows.filter(x=>!oldSet.has(x.id)).slice(0,3).forEach(x=>enqueueAlert("新 Gmail",`${x.sender}：${x.subject}`,2))}setGmailHint("已連接；權杖只儲存在你的瀏覽器，可隨時中斷。");setStamp("#gmailUpdated")}catch(e){$("#gmail").innerHTML='<div class="error">暫時未能取得數據</div>';setGmailHint(esc(e.message),true)}
+  if(!state.gmailOpen||!state.gmailToken||state.gmailBusy)return;
+  if(state.gmailExpiry<=Date.now()){await disconnectGmail(false);return}
+  const generation=state.gmailGeneration,ctl=new AbortController();state.gmailAbort=ctl;state.gmailBusy=true;
+  const current=()=>state.gmailOpen&&generation===state.gmailGeneration&&!ctl.signal.aborted;
+  try{
+    const list=await gmailFetch("messages?q=is%3Aunread&maxResults=10",ctl.signal);if(!current())return;
+    const msgs=await Promise.all((list.messages||[]).map(x=>gmailFetch(`messages/${x.id}?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date`,ctl.signal)));if(!current())return;
+    const rows=msgs.map(m=>{const h=Object.fromEntries((m.payload?.headers||[]).map(x=>[x.name.toLowerCase(),x.value]));return{id:m.id,sender:h.from||T('（未知寄件人）'),subject:h.subject||T('（沒有主旨）'),date:h.date||Number(m.internalDate),thread:m.threadId}}).sort((a,b)=>new Date(b.date)-new Date(a.date));
+    gmailConnectedUI();$('#gmail').innerHTML=rows.length?`<div class="mail-list">${rows.map(m=>`<a class="mail" href="https://mail.google.com/mail/u/0/#inbox/${esc(m.thread)}" target="_blank" rel="noopener"><span class="sender">${esc(m.sender)}</span><span class="subject">${esc(m.subject)}</span><span class="mail-time" data-datetime="${new Date(m.date).getTime()}">${esc(hkDateTime(m.date))}</span></a>`).join('')}</div>`:`<div class="empty">${T('目前沒有未讀郵件')}</div>`;
+    const ids=rows.map(x=>x.id).join(','),old=previous('gmail_ids');remember('gmail_ids',ids);if(old!==null){const oldSet=new Set(old.split(','));rows.filter(x=>!oldSet.has(x.id)).slice(0,3).forEach(x=>enqueueAlert('新 Gmail',`${x.sender}：${x.subject}`,2))}
+    setGmailHint(T('已連接；權杖只儲存在你的瀏覽器，可隨時中斷。'));setStamp('#gmailUpdated');
+  }catch(e){if(current()&&state.gmailToken){$('#gmail').hidden=false;$('#gmail').innerHTML=`<div class="error">${T('暫時未能取得數據')}</div>`;setGmailHint(esc(e.message),true)}}finally{if(generation===state.gmailGeneration){state.gmailBusy=false;state.gmailAbort=null}}
 }
-async function disconnectGmail(revoke=true){if(revoke&&state.gmailToken)fetch("https://oauth2.googleapis.com/revoke?token="+encodeURIComponent(state.gmailToken),{method:"POST"}).catch(()=>{});state.gmailToken=null;state.gmailExpiry=0;localStorage.removeItem("dashboard_gmail_token");localStorage.removeItem("dashboard_gmail_expiry");clearInterval(state.gmailTimer);$("#gmailDisconnect").hidden=true;$("#gmail").innerHTML='<div class="empty">尚未連接 Gmail</div>';setGmailHint("已中斷連接；本頁已移除 Gmail 存取權杖。")}
+async function disconnectGmail(revoke=true){if(revoke&&state.gmailToken)fetch("https://oauth2.googleapis.com/revoke?token="+encodeURIComponent(state.gmailToken),{method:"POST",cache:'no-store'}).catch(()=>{});state.gmailGeneration++;state.gmailAbort?.abort();state.gmailBusy=false;state.gmailToken=null;state.gmailExpiry=0;localStorage.removeItem("dashboard_gmail_token");localStorage.removeItem("dashboard_gmail_expiry");clearInterval(state.gmailTimer);state.gmailTimer=null;baselines.delete('gmail_ids');gmailAuthOnly();}
 
 function handleWhatsAppStatus(count){count=Number(count)||0;$("#waUnread").textContent=count;const old=previous("whatsapp_unread");remember("whatsapp_unread",count);if(old!==null&&count>Number(old))enqueueAlert("WhatsApp",L(`未讀訊息增加至 ${count} 則`,`UNREAD COUNT INCREASED TO ${count}`),2)}
 function setupWhatsApp(){
@@ -253,12 +293,11 @@ async function init(){
   tickClock();setInterval(tickClock,1000);$("#breakingClose").onclick=closeAlert;$("#testAlert").onclick=testAlerts;
   $("#muteToggle").checked=localStorage.getItem("dashboard_muted")==="1";$("#muteToggle").onchange=e=>localStorage.setItem("dashboard_muted",e.target.checked?"1":"0");
   const desktopSupported=IS_EXTENSION||("Notification" in window&&!/iPhone|iPad|iPod/i.test(navigator.userAgent));
-  $("#notifyToggle").disabled=!desktopSupported;$("#notifyToggle").title=desktopSupported?"只在看板仍開啟時提供通知":"手機版提供頁內提示；關閉或切到背景後不保證更新。";
+  $("#notifyToggle").disabled=!desktopSupported;$("#notifyToggle").title=T(desktopSupported?"只在看板仍開啟時提供通知":"手機版提供頁內提示；關閉或切到背景後不保證更新。");
   $("#notifyToggle").checked=desktopSupported&&localStorage.getItem("dashboard_notify")==="1";$("#notifyToggle").onchange=async e=>{try{if(e.target.checked&&!IS_EXTENSION){const p=await Notification.requestPermission();if(p!=="granted")e.target.checked=false}}catch{e.target.checked=false}localStorage.setItem("dashboard_notify",e.target.checked?"1":"0")};
   $("#gmailAuth").onclick=IS_EXTENSION?connectGmailExtension:connectGmailWeb;$("#gmailDisconnect").onclick=()=>disconnectGmail(true);setupWhatsApp();
   const runtime=IS_EXTENSION?`擴充功能模式｜ID：<code>${esc(chrome.runtime.id)}</code><br>Gmail Redirect URI：<code>${esc(chrome.identity.getRedirectURL("oauth2"))}</code>`:`GitHub Pages／網頁模式｜目前網址：<code>${esc(location.origin)}</code>`;$("#runtimeInfo").innerHTML=runtime;
-  if(restoreToken()){loadGmail();startGmailPolling()}
-  if(!IS_EXTENSION)prepareGmailWeb().catch(e=>setGmailHint(esc(e.message),true));
+  setupMessagePanels();setupTransitSort();
   const jobs=[[loadTransit,30000],[loadWeather,60000],[loadFx,60000],[loadNews,60000],[loadMarkets,60000]];
   for(const [load,interval]of jobs){let busy=false;const run=async()=>{if(busy)return;busy=true;try{await load()}finally{busy=false}};run();setInterval(run,interval)}
 }
@@ -272,7 +311,7 @@ document.addEventListener('infodesk:language',()=>{
   const weather=state.weatherCache[lang()];
   if(weather)renderWeatherData(weather);else{$('#weather').innerHTML='<div class="loading">正在取得天文台資料…</div>';state.warningText=T('暫無天氣警告');}
   state.headlines=[];
-  for(const [key,target]of [['local','#localNews'],['world','#worldNews']]){const saved=state.newsCache[lang()]?.[key];if(saved)renderNewsGroup(saved,target,key,lang());else $(target).innerHTML='<div class="loading">正在取得新聞…</div>';}
+  for(const [key,target]of [['local','#localNews'],['world','#worldNews']]){const saved=state.newsCache[lang()]?.[key];if(saved){renderNewsGroup(saved,target,key,lang());if(key==='local')window.InfoDeskNews?.renderLocal(saved)}else $(target).innerHTML='<div class="loading">正在取得新聞…</div>';}
   updateTicker();UI.apply();UI.refreshDates();state.suppressAlerts=false;
   loadWeather();loadNews();
 });

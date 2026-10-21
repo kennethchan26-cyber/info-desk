@@ -2,9 +2,60 @@
 
 中／EN 即時切換並記住選擇，預設繁體中文。中文日/月/年，英文例如 21 Oct 2026，均用香港 24 小時制。相同 HTML/CSS/JavaScript 同時支援 GitHub Pages 純靜態網頁及 Chrome Manifest V3 新分頁擴充功能。不需要本機代理或後端。
 
+
+## 21/10/2026 PWA、訊息收起及新聞更新
+
+- Gmail／WhatsApp 分別記住展開狀態，首次預設收起。Gmail 收起會取消5分鐘計時器、取消進行中的請求、停止新郵件提示；不載入 Google 登入元件。展開時若授權過期，只顯示唯讀連接按鈕，不發突發提示。重新展開的第一批郵件只建立新基線。
+- 頂部快捷列：電腦在新分頁開 Gmail、WhatsApp Web、Threads；iPhone 嘗試 Gmail／WhatsApp App scheme，未開啟時回到網頁。Threads 用 HTTPS Universal Link，由 iOS／安裝狀態決定是否開 App；未能在實體 iPhone 保證所有 App 跳轉。
+- 交通預設按下一班到站排序，只在30秒資料更新時調位；不足60秒差距沿用先前次序，400毫秒滑動。無資料在最後。「固定次序」恢復 config.js 路線順序。路線及車站沒有改動。
+- 下方標題及突發橫額高度由86px縮至73px（手機82px→70px）；手機標題字不小於13px。內容按可用視窗高度預留固定底欄空間，交通及右欄可獨立捲動。
+- 美股新聞為四個 CNBC 官方 RSS 合併、去重後最新10條，每5分鐘更新；英文標題保持原文，加入下方「美股」輪播。手機接在國際新聞後。
+- 中文本地新聞合併港台、now及有線；按標題去重。篩選選擇記存在瀏覽器，灰色來源按鈕表示該來源本次失敗。英文仍用港台英文 RSS。
+- PWA 使用 **app.webmanifest**；原 **manifest.json** 仍只屬 Chrome 擴充功能。site.webmanifest 留作舊連結相容，不再由主頁引用。
+
+### 安裝、離線及更新
+
+1. Chrome 打開正式網址，按快捷列「安裝」，再確認瀏覽器的安裝對話框。若沒有提示，可用 Chrome 選單 →「投放、儲存及分享」→「安裝網頁為應用程式」。
+2. 第一次須連網載入。Service Worker 預存介面、程式、圖示及一個本地英文字體；Google 字體亦預熱快取，下載失敗時用本地／系統字體。
+3. 公開數據採網絡優先；失敗用本瀏覽器上次成功資料，標示原來取得時間。完全離線顯示「離線中」，只有部分來源失敗則顯示「部分來源未連線」。交通快取只供參考，不代表仍有該班車。
+4. **Gmail 內容、OAuth 元件、憑證不進入 Service Worker／Cache Storage。** Gmail 存取權杖仍按原設計只存本機 localStorage；擴充功能／瀏覽器本身或其他已安裝外掛的權限不由本程式控制。
+5. 新版本完成下載後，頂部顯示「有新版本，按此更新」。按下才切換及重新載入，不會突然中斷正在看的頁面。每次開啟及每15分鐘檢查版本。
+6. 瀏覽器清除網站資料、儲存空間回收或尚未成功載入的來源，都可能沒有離線副本。未先連網打開的語言版本也可能沒有該語言天氣／新聞快取。
+7. PWA 沒有伺服器推播；鎖屏、背景或關頁後不保證更新。桌面提示仍須開著看板。
+
+### iPhone 更換舊主畫面圖示
+
+1. 長按舊 INFO//DESK 圖示 →「移除書籤」或「刪除 App」→確認移除舊主畫面入口。**不用在 Safari 清除網站資料。**
+2. 用 **Safari** 開啟 https://kennethchan26-cyber.github.io/info-desk/ ，等待資料及新圖示載入。
+3. 按「分享」→「加入主畫面」，名稱用 INFO//DESK；如有「以網頁 App 開啟」，保持啟用 →「加入」。
+4. 從新圖示開啟，會使用獨立視窗、黑色半透明狀態列及瀏海／底部安全區域。Gmail 如需重新授權，展開 Gmail 再按連接即可。
+
+### 新聞實際來源及時效
+
+所有時間均依文章發布時間排序；下列「檢查週期」不是保證發布延遲。Google 搜尋 RSS 有搜尋索引延遲，Jina Reader 亦可能快取／限流；不繞過來源封鎖。僅供個人非商業閱讀，連回原文。
+
+| 來源 | 實際 RSS／既有列表網址 | 檢查週期／約略時效 |
+| --- | --- | --- |
+| CNBC Top News | https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=100003114 | 5分鐘；RSS宣告TTL60分鐘，可能數分鐘至約1小時或更久 |
+| CNBC Investing | https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=15839069 | 同上 |
+| CNBC Economy | https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=20910258 | 同上 |
+| CNBC Asia-Pacific | https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=19832390 | 同上 |
+| now（Google News搜尋） | https://news.google.com/rss/search?q=site%3Anews.now.com&hl=zh-HK&gl=HK&ceid=HK%3Azh-Hant | 60秒；索引延遲可由數分鐘至數小時，無保證 |
+| 有線（Google News搜尋） | https://news.google.com/rss/search?q=site%3Ai-cable.com&hl=zh-HK&gl=HK&ceid=HK%3Azh-Hant | 同上 |
+| 港台中文本地（保留原列表，非RSS） | https://news.rthk.hk/rthk/ch/latest-news/local.htm | 60秒；Reader快照可能延遲，常見數分鐘至更久 |
+| 港台中文國際（列表） | https://news.rthk.hk/rthk/ch/latest-news/world-news.htm | 同上 |
+| 港台中文財經（列表） | https://news.rthk.hk/rthk/ch/latest-news/finance.htm | 同上 |
+| 港台英文香港 | https://rthk.hk/rthk/news/rss/e_expressnews_elocal.xml | 60秒；Reader轉讀，可能數分鐘或更久 |
+| 港台英文國際 | https://rthk.hk/rthk/news/rss/e_expressnews_einternational.xml | 同上 |
+| 港台英文財經 | https://rthk.hk/rthk/news/rss/e_expressnews_efinance.xml | 同上 |
+
+CNBC 直接跨域讀取（來源容許 CORS）；其餘新聞沿用 https://r.jina.ai/ 加原網址的方式。now 官方新聞網域為 news.now.com；有線為 www.i-cable.com，Google 的 site:i-cable.com 同時涵蓋該子網域。以上免費來源不需要新增 API key。
+
+本次本機實測（21/10/2026 約19:42 HKT）：CNBC四個RSS均HTTP200並合併顯示10條；now及有線均已在看板成功顯示來源標籤，港台中文及英文香港亦成功。Google News原RSS各有100條；now最新文章約15分鐘前、有線約5分鐘前，這是文章年齡，不是量度出的索引延遲。Reader曾短暫封鎖／HTTP429，恢復後毋須改來源即可讀取；英文國際／財經曾有一源失敗但其餘新聞仍顯示。免費來源不能保證每次成功。
+
 ## 發佈檔案
 
-只上載以下 17 個檔案，不要拖入整個工作資料夾、設定截圖、測試輸出、憑證或瀏覽器資料。
+只上載以下 28 個檔案，不要拖入整個工作資料夾、設定截圖、測試輸出、憑證或瀏覽器資料。
 
 | 檔案 | 用途 |
 | --- | --- |
@@ -16,7 +67,7 @@
 | app.js | 資料讀取、登入及提示佇列 |
 | background.js | 擴充功能 WhatsApp 標題未讀提示 |
 | manifest.json | Chrome MV3 設定，不是網站 manifest |
-| site.webmanifest | 網站主畫面設定 |
+| site.webmanifest | 舊主畫面連結相容設定；主頁改用 app.webmanifest |
 | icon.svg | 網站圖示 |
 | apple-touch-icon.png | iPhone 180 × 180 圖示，沒有個人 metadata |
 | README.md | 本說明 |
@@ -25,6 +76,13 @@
 | signals.js | 香港熱搜 RSS、Coinbase 公開 WebSocket、重連及新熱搜提示 |
 | i18n.js | 中英介面切換、日期格式及偏好記憶 |
 | forex.js | 外幣兌港元換算、前一參考日升跌及批量查詢 |
+| public-data.js | 嚴格限制的公開數據 network-first 快取 |
+| transit-order.js | 到站時間排序及60秒穩定區間 |
+| news-extra.js | CNBC、now／有線、去重及來源篩選 |
+| pwa.js / sw.js | 安裝、版本提示、離線介面與字體快取 |
+| app.webmanifest | PWA 獨立視窗設定 |
+| icon-192.png / icon-512.png / icon-maskable-512.png | PWA 圖示 |
+| barlow-condensed.woff2 / FONT-LICENSE.txt | 本地英文字體及 SIL OFL 授權 |
 
 ## 雙語、外匯與可收起加密貨幣
 
@@ -45,7 +103,7 @@
 - BTC-USD、ETH-USD、SOL-USD 使用 [Coinbase Exchange 公開 ticker 串流](https://docs.cdp.coinbase.com/exchange/websocket-feed/channels)，不需要 key 或登入；升跌為 24 小時，不是股票的即日升跌。每筆行情只更新已展開的加密貨幣板。
 - WebSocket 斷線顯示「重新連線中」，採用約 1、2、4 秒遞增至 30 秒的重試等待（另加少量隨機延遲）。Heartbeat 超過 20 秒沒有資料亦會重連；關頁會停止，恢復網絡會重連。手機鎖屏或背景可能暫停，不保證背景即時更新。
 - 指數、自選股、外匯及加密貨幣改動時，格子及價格紅／綠閃動 0.5 秒再恢復白字；首次資料不閃。外匯仍是每日參考價，沒有變動時不會製造假跳動。
-- 主板共六頁：交易倒數、交通、天氣、自選股、熱搜、新聞。手機外匯在市場之後，熱搜在新聞之前，加密貨幣最後。Gmail 權限、交通班次、交易日曆及中文新聞來源未更改。
+- 主板共七頁：交易倒數、交通、天氣、自選股、熱搜、新聞、美股新聞。手機外匯在市場之後，熱搜在新聞之前，加密貨幣最後。Gmail 權限、交通班次及交易日曆未更改；中文新聞增加 now 及有線。
 
 ## 電視台式版面
 
@@ -106,7 +164,7 @@
 4. 從新圖示開啟。已設定 apple-touch-icon、標題、獨立顯示及瀏海／Home indicator 留白。
 5. Gmail 如未連接，須在該環境分別授權。WhatsApp 按鈕會嘗試開啟已安裝的 WhatsApp App。
 
-這是連網網頁，不是離線 App；沒有 service worker、背景推播或伺服器。iPhone 切到背景、鎖屏或關頁後，更新及提示可能暫停。桌面通知只供支援的電腦瀏覽器、看板仍開啟時使用。
+現在支援 PWA 及 Service Worker 離線開啟；沒有背景推播或伺服器。iPhone 切到背景、鎖屏或關頁後，更新及提示可能暫停。桌面通知只供支援的電腦瀏覽器、看板仍開啟時使用。
 
 ## Chrome 擴充功能
 
@@ -119,7 +177,7 @@
 
 ## 更新、提示與錯誤
 
-- 交通每 30 秒；天氣、股票、外匯、新聞每 60 秒；Gmail 每 5 分鐘。上次查詢未完成時不重複排隊。
+- 交通每 30 秒；天氣、股票、外匯、本地及國際新聞每 60 秒；CNBC 每 5 分鐘；Gmail 只在展開且授權有效時每 5 分鐘。上次查詢未完成時不重複排隊。
 - 「最後更新」是本頁最近成功取得資料的時間，各區塊有獨立時間；不代表來源即時。
 - 每次開啟時，各來源第一筆成功資料只建立基線，不發出歷史提示。
 - 警告變化、新郵件、新新聞、WhatsApp 未讀增加、恒指／道指突破 2% 門檻、下一班車進入 3 分鐘範圍會提示。
@@ -135,10 +193,10 @@
 | 804、65K、69X | 運輸署專線小巴 ETA | 預計到站，可能不足 3 班 |
 | 680 | 九巴及城巴 ETA | 分別查詢合併；沒有某公司班次不等於 API 失敗 |
 | 30X | 城巴 ETA | 預計到站，可能不足 3 班 |
-| Gmail | Gmail API | 唯讀、每 5 分鐘查詢 |
+| Gmail | Gmail API | 唯讀、只在展開時每 5 分鐘查詢，不離線快取 |
 | 港股／美股 | Yahoo Finance spark 批量報價；網頁經 Jina Reader | 每批最多 20 個代號；現有 25 項每次分 2 批。報價及快照可延遲，非交易用途 |
 | 外匯 | Frankfurter v2／多個中央銀行及官方來源 | 每日綜合市場中間參考價，較前一參考日，非銀行即時買賣價；每 60 秒查詢 |
-| 香港新聞 | 港台本地分類，經 Jina Reader | 原文發布時間排序，快照可快取 |
+| 香港新聞 | 港台本地分類＋Google News 的 now／有線搜尋 RSS，經 Jina Reader | 原文發布時間排序、標題去重、來源篩選；英文仍為港台 |
 | 國際／財經 | 港台國際及財經分類，經 Jina Reader | 合併去重、由新到舊；部分來源失敗會標示 |
 | 香港熱搜 | Google Trends 香港 RSS，經 Jina Reader | 每 15 分鐘查詢，首 10 個字眼及概約搜尋量；並非逐秒排行 |
 | BTC／ETH／SOL | Coinbase Exchange 公開 WebSocket ticker | 美元成交價即時串流；升跌百分比以 24 小時開盤價計算，並非全市場綜合價 |
