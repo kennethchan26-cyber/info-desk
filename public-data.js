@@ -17,6 +17,14 @@ window.InfoDeskNetwork = (() => {
     if(['news.rthk.hk','rthk.hk'].includes(u.hostname)&&/\/rthk\/(ch\/latest-news\/|news\/rss\/)/.test(u.pathname))return /local|elocal/.test(u.pathname)?'localNews':'worldNews';
   }catch{}return null;}
   function allowed(url,options={}){const h=new Headers(options.headers||{});return (options.method||'GET').toUpperCase()==='GET'&&!h.has('Authorization')&&!h.has('Cookie')&&Boolean(group(url));}
+  function valid(url,body){const g=group(url);try{
+    if(['localNews','worldNews','trends','usNews'].includes(g))return /<rss[\s>][\s\S]*<item[\s>]/i.test(body)||(/rthk\.hk/.test(url)&&/https:\/\/news\.rthk\.hk\/rthk\/(?:ch|en)\/component\/k2\//.test(body));
+    const start=body.indexOf('{'),end=body.lastIndexOf('}'),json=g==='markets'?JSON.parse(body.slice(start,end+1).replace(/\r?\n\s*/g,'')):JSON.parse(body);
+    if(g==='fx')return Array.isArray(json)&&json.some(x=>Number(x.rate)>0);
+    if(g==='markets')return Array.isArray(json.spark?.result)&&json.spark.result.some(x=>Number(x.response?.[0]?.meta?.regularMarketPrice)>0);
+    if(g==='transit')return Array.isArray(json.data)||Array.isArray(json.data?.eta);
+    if(g==='weather'){const type=new URL(url).searchParams.get('dataType');return type==='warnsum'?Boolean(json&&typeof json==='object'&&!Array.isArray(json)):type==='rhrread'?Array.isArray(json.temperature?.data):type==='fnd'?Array.isArray(json.weatherForecast):Boolean(json.forecastDesc||json.generalSituation)}
+  }catch{}return false;}
   function report(url,time,stale){records.set(url,{group:group(url),time,stale});document.dispatchEvent(new CustomEvent('infodesk:network'));}
   async function publicFetch(url,options={}){
     if(!allowed(url,options))throw new Error('Not an anonymous public-data request');
@@ -24,19 +32,20 @@ window.InfoDeskNetwork = (() => {
     try{
       const response=await fetch(url,{...options,credentials:'omit',referrerPolicy:'no-referrer',cache:'no-store'});
       if(!response.ok)throw new Error('HTTP '+response.status);
+      const body=await response.clone().text();if(!valid(url,body))throw new Error('Invalid public response');
       const time=Date.now();report(url,time,false);
-      if(cache){try{const body=await response.clone().arrayBuffer();if(body.byteLength<5*1024*1024){const headers=new Headers(response.headers);headers.set('X-InfoDesk-Fetched',String(time));await cache.put(url,new Response(body,{headers,status:200}));const keys=await cache.keys();for(const key of keys.slice(0,Math.max(0,keys.length-MAX)))await cache.delete(key)}}catch{}}
+      if(cache){try{if(body.length<5*1024*1024){const headers=new Headers({'Content-Type':response.headers.get('Content-Type')||'text/plain;charset=utf-8','X-InfoDesk-Fetched':String(time)});await cache.put(url,new Response(body,{headers,status:200}));const keys=await cache.keys();for(const key of keys.slice(0,Math.max(0,keys.length-MAX)))await cache.delete(key)}}catch{}}
       return response;
     }catch(error){
       let saved=await cache?.match(url);
       // FX request dates roll forward at midnight; use the last successful reference set offline.
       if(!saved&&cache&&group(url)==='fx'){const keys=await cache.keys();for(const key of keys.reverse()){if(group(key.url)==='fx'){saved=await cache.match(key);break}}}
-      if(!saved)throw error;
+      if(!saved||!valid(url,await saved.clone().text()))throw error;
       report(url,Number(saved.headers.get('X-InfoDesk-Fetched'))||0,true);return saved;
     }
   }
   const relevant=g=>[...records.values()].filter(x=>x.group===g);
   function stamp(g){const rows=relevant(g),old=rows.filter(x=>x.stale);return (old.length?Math.min(...old.map(x=>x.time)):Math.max(0,...rows.map(x=>x.time)))||Date.now()}
   function begin(g){for(const [url,r]of records)if(r.group===g)records.delete(url)}
-  return {fetch:publicFetch,group,allowed,begin,stamp,stale:g=>relevant(g).some(x=>x.stale),status:()=>[...records.values()].map(x=>({...x})),CACHE};
+  return {fetch:publicFetch,group,allowed,valid,begin,stamp,stale:g=>relevant(g).some(x=>x.stale),status:()=>[...records.values()].map(x=>({...x})),CACHE};
 })();
