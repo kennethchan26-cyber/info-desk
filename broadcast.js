@@ -8,7 +8,8 @@ window.InfoDeskView = (() => {
   let slide=0,paused=false,locked=false,rotateAt=Date.now()+15000,lowerIndex=0,latestTransit=[],lastClockTick=null;
   const names=['市場','交通','天氣','市場','熱搜','新聞','美股'];
   const text=v=>window.InfoDeskI18n?.t(v)??v,english=()=>window.InfoDeskI18n?.en()||false;
-  const mobile=()=>matchMedia('(max-width:767px)').matches;
+  const tv=()=>Boolean(window.InfoDeskTV?.enabled());
+  const mobile=()=>!tv()&&matchMedia('(max-width:767px)').matches;
   function observe(id,fn){const node=Q(id);new MutationObserver(fn).observe(node,{childList:true});fn();}
   function valueOf(node,selector){return node.querySelector(selector)?.textContent?.trim()||'';}
   function quotes(){return all('#hkMarket .quote,#usMarket .quote').map((e,i)=>({symbol:e.dataset.symbol,name:valueOf(e,'.quote-name'),price:valueOf(e,'.quote-price'),pct:valueOf(e,'.quote-change'),time:valueOf(e,'.quote-time'),timeKey:e.querySelector('[data-datetime]')?.dataset.datetime||'',delta:Number(e.dataset.delta),error:valueOf(e,'.quote-error'),cls:e.querySelector('.quote-change')?.classList.contains('up')?'up':e.querySelector('.quote-change')?.classList.contains('down')?'down':'flat',node:e,index:i}));}
@@ -54,12 +55,12 @@ window.InfoDeskView = (() => {
   }
   function marketTick(now=Date.now()){for(const key of ['HK','US']){const s=C.status(key,now),prev=marketPrevious.get(key);if(prev?.next&&lastClockTick!==null&&now-lastClockTick<10000&&prev.next.time>lastClockTick&&prev.next.time<=now)enqueueAlert('市場時刻',english()?`${text(s.name)} ${prev.next.type==='開市'?'OPEN':prev.next.type==='收市'?'CLOSED':text(prev.next.type)}${prev.next.early?' (EARLY CLOSE)':''}`:`${s.name}${prev.next.type}${prev.next.early&&prev.next.type==='收市'?'（提早收市）':''}`,3);marketPrevious.set(key,s);const html=countdownHTML(s);Q('#countdown'+key).innerHTML=html;Q('#mini'+key).innerHTML=html;}lastClockTick=now;}
   function showSlide(n){slide=n;all('.stage').forEach((e,i)=>{e.classList.toggle('active',i===n);e.inert=!mobile()&&i!==n;});all('[data-slide]').forEach(e=>{e.setAttribute('aria-current',String(+e.dataset.slide===n));e.disabled=locked&&!mobile();});}
-  function rotationTick(now=Date.now()){const nextLock=C.commute(now)&&!mobile();if(nextLock!==locked){locked=nextLock;rotateAt=now+15000;if(locked)showSlide(1);else showSlide(slide);}
+  function rotationTick(now=Date.now()){const nextLock=C.commute(now)&&!mobile()&&!tv();if(nextLock!==locked){locked=nextLock;rotateAt=now+15000;if(locked)showSlide(1);else showSlide(slide);}
     if(mobile()){all('.stage').forEach(e=>e.inert=false);Q('#rotationStatus').textContent='香港視角 · 全部資料';return;}
     if(locked){if(slide!==1)showSlide(1);Q('#rotationStatus').textContent='通勤時段 · 固定交通';Q('#pauseRotation').disabled=true;return;}
-    Q('#pauseRotation').disabled=false;Q('#rotationStatus').textContent=paused?'輪播已暫停':'15 秒輪播 · 香港視角';
+    Q('#pauseRotation').disabled=false;Q('#rotationStatus').textContent=tv()?(english()?'TV · AUTO ROTATE 15 SEC':'TV · 15 秒自動輪播'):paused?'輪播已暫停':'15 秒輪播 · 香港視角';
     // Pause while a person is interacting with a stage link, to avoid moving their focus.
-    if(!paused&&now>=rotateAt&&!Q('.stage-deck').contains(document.activeElement)){showSlide((slide+1)%all('.stage').length);rotateAt=now+15000;}
+    if((tv()||!paused)&&now>=rotateAt&&(tv()||!Q('.stage-deck').contains(document.activeElement))){showSlide((slide+1)%all('.stage').length);rotateAt=now+15000;}
   }
   function lowerThird(){if(state.alertShowing)return;const nodes=all('#localNews .news-item,#worldNews .news-item,#usNews .news-item');nodes.sort((a,b)=>Number(b.dataset.published)-Number(a.dataset.published));const news=[...new Map(nodes.map(e=>[e.href,e])).values()];
     const data=quotes().filter(q=>q.price),slot=lowerIndex++;let html,category='新聞';if(slot%4===3&&data.length){const q=data[Math.floor(slot/4)%data.length],price=Number(q.price.replaceAll(',','')),pct=parseFloat(q.pct),delta=Number.isFinite(q.delta)?q.delta:price-price/(1+pct/100);category='市場';html=`<div class="lower-data"><b>${esc(q.name)}</b><strong>${esc(q.price)}</strong><span class="${q.cls}">${arrow(q)} ${Math.abs(delta).toFixed(2)}　${Math.abs(pct).toFixed(2)}%</span></div>`;}else if(slot%4===2&&window.InfoDeskSignals?.getTrends().length){const trends=window.InfoDeskSignals.getTrends(),t=trends[Math.floor(slot/4)%trends.length];category='熱搜';html=`<a href="${esc(t.articles[0]?.link||t.link)}" target="_blank" rel="noopener noreferrer">${esc(t.title)}${t.traffic?' · '+esc(t.traffic)+' 次搜尋':''}</a>`;}else if(news.length){const n=news[slot%news.length];html=`<a href="${esc(n.href)}" target="_blank" rel="noopener noreferrer">${esc(valueOf(n,'.news-title'))}</a>`;}else{category=names[slide];html=esc(state.warningText||'你嘅世界，一眼掌握。');}
@@ -67,9 +68,10 @@ window.InfoDeskView = (() => {
     Q('#lowerCategory').textContent=text(category);Q('#lowerHeadline').innerHTML=html.replace(' 次搜尋',english()?' SEARCHES':' 次搜尋');Q('#lowerHeadline').classList.remove('wipe');void Q('#lowerHeadline').offsetWidth;Q('#lowerHeadline').classList.add('wipe');
   }
   function init(){observe('#hkMarket',queueQuotes);observe('#usMarket',queueQuotes);observe('#weather',renderWeather);observe('#fx',()=>{all('#fx .fx').forEach(e=>flash(e,'fx:'+e.dataset.code,+valueOf(e,'.fx-rate')));updateTicker();});
-    const fit=()=>{if(mobile())return;const top=Q('.stage-deck').getBoundingClientRect().top+window.scrollY,footer=Q('.lower-third').getBoundingClientRect().height+Q('.ticker-shell').getBoundingClientRect().height;document.documentElement.style.setProperty('--deck-height',Math.max(250,window.innerHeight-top-footer-34)+'px')};
+    const fit=()=>{if(mobile()||tv())return;const top=Q('.stage-deck').getBoundingClientRect().top+window.scrollY,footer=Q('.lower-third').getBoundingClientRect().height+Q('.ticker-shell').getBoundingClientRect().height;document.documentElement.style.setProperty('--deck-height',Math.max(250,window.innerHeight-top-footer-34)+'px')};
     new ResizeObserver(fit).observe(Q('.topbar'));new ResizeObserver(fit).observe(Q('.quickbar'));new ResizeObserver(fit).observe(Q('#appNotices'));window.addEventListener('resize',fit);fit();
     document.addEventListener('infodesk:language',()=>{renderQuotes();renderWeather();renderNextBus();marketTick();rotationTick();lowerThird()});
+    document.addEventListener('infodesk:tv',()=>{rotateAt=Date.now()+15000;showSlide(slide);rotationTick();fit()});
     all('[data-slide]').forEach(e=>e.addEventListener('click',()=>{if(locked&&!mobile())return;showSlide(+e.dataset.slide);rotateAt=Date.now()+15000;}));
     Q('#pauseRotation').onclick=()=>{paused=!paused;Q('#pauseRotation').setAttribute('aria-pressed',String(paused));Q('#pauseRotation').textContent=paused?'繼續輪播':'暫停輪播';rotateAt=Date.now()+15000;rotationTick();};
     matchMedia('(max-width:767px)').addEventListener('change',()=>{showSlide(slide);rotationTick();});

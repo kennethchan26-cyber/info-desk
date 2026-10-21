@@ -1,0 +1,40 @@
+:where(html.tv-mode) .countdown-stage .panel-head{padding:14px 22px 10px}:where(html.tv-mode) .countdown-stage h1{font-size:38px}:where(html.tv-mode) .countdown-stage .panel-bottom{padding:8px 16px}:where(html.tv-mode) .countdown-stage .source-tag{padding:5px 10px}
+:where(html.tv-mode) .transit-stage .panel-head{padding:12px 22px 10px}:where(html.tv-mode) .transit-stage h1{font-size:34px}:where(html.tv-mode) .transit-stage .next-bus{padding:10px 22px}:where(html.tv-mode) .transit-stage .route-card{padding:6px 0}:where(html.tv-mode) .transit-stage .route-no{font-size:40px}:where(html.tv-mode) .transit-stage .operator{font-size:8px;margin-top:4px}:where(html.tv-mode) .transit-stage .panel-bottom{padding:8px 16px}:where(html.tv-mode) .transit-stage .source-tag{padding:5px 10px}
+:where(html.tv-mode) #usMarket{grid-template-columns:repeat(5,minmax(0,1fr))}:where(html.tv-mode) #usMarket .quote{padding:8px}:where(html.tv-mode) #usMarket .quote-price{font-size:28px}:where(html.tv-mode) #usMarket .quote-change{font-size:18px}:where(html.tv-mode) #usMarket .spark-pending{min-height:15px}:where(html.tv-mode) #usMarket .sparkline{height:20px}
+/* A 1536 x 864 broadcast surface scales to 1920 x 1080 at 125%.
+   All furniture, including breaking banners, stays inside the 3% safe rectangle. */
+#tvToggle[aria-pressed="true"]{background:var(--orange);color:#08060c;border-color:var(--orange)}
+#tvToggle[data-awake="true"]::after{content:"";display:inline-block;width:5px;height:5px;margin-left:5px;background:var(--green)}
+html.tv-mode{--lower:73px;--ticker:34px;overflow:hidden}
+html.tv-mode body{min-height:0;height:100dvh;overflow:hidden;padding:0;background:#07060c}
+html.tv-mode #deskSurface{grid-template-columns:minmax(0,1fr)}
+html.tv-mode #deskSurface>*{min-width:0}
+html.tv-mode #deskSurface{position:fixed;left:var(--tv-center-x,50%);top:var(--tv-center-y,50%);width:1536px;height:864px;transform:translate(-50%,-50%) scale(var(--tv-scale,1));transform-origin:center;overflow:hidden;padding:25.92px 46.08px;display:grid;grid-template-rows:92px auto minmax(0,1fr) 18px var(--lower) var(--ticker);background:radial-gradient(ellipse at 3% 60%,#631c6670,transparent 53%),radial-gradient(ellipse at 85% 12%,#113b7766,transparent 57%),#07060c}
+html.tv-mode .topbar{grid-row:1;padding:8px 0;grid-template-columns:190px 1fr auto 200px}
+html.tv-mode #appNotices{grid-row:2;padding-left:0;padding-right:0}
+html.tv-mode .broadcast-layout{grid-row:3;width:100%;min-height:0;margin:0;padding:8px 0 4px;grid-template-rows:auto minmax(0,1fr);grid-template-columns:minmax(0,65fr) minmax(0,35fr)}
+html.tv-mode .stage-deck,html.tv-mode .data-rail{height:100%;min-height:0;scrollbar-width:none}
+html.tv-mode .stage,html.tv-mode .stage .panel-body,html.tv-mode .news-columns{scrollbar-width:none}
+html.tv-mode .stage-tabs,html.tv-mode .quickbar,html.tv-mode .news-filters,html.tv-mode .disclosure-arrow,html.tv-mode #testAlert,html.tv-mode #pauseRotation,html.tv-mode #transitSort,html.tv-mode #threadsOpen,html.tv-mode .header-actions label,html.tv-mode .gmail-toolbar,html.tv-mode #waOpen,html.tv-mode #installHelp{display:none!important}
+html.tv-mode .panel-toggle,html.tv-mode .crypto-toggle{pointer-events:none;cursor:default}
+html.tv-mode .data-rail .collapsed,html.tv-mode .crypto-panel:has(#cryptoToggle[aria-expanded="false"]){display:none}
+html.tv-mode .stage a,html.tv-mode .data-rail a{pointer-events:none}
+html.tv-mode .header-actions{gap:10px;font-size:12px}
+html.tv-mode .panel-head h1{font-size:44px}
+html.tv-mode .countdown-stage h1{font-size:38px}
+html.tv-mode .transit-stage h1{font-size:34px}
+html.tv-mode .countdown-number{font-size:46px}
+html.tv-mode .focus-quote .quote-price{font-size:46px}
+html.tv-mode .mini-clocks .countdown-number{font-size:30px}
+html.tv-mode[lang="en-HK"] .mini-clocks .countdown-number{font-size:28px}
+html.tv-mode .lower-third{grid-row:5;position:relative;left:auto;right:auto;bottom:auto;height:var(--lower)}
+html.tv-mode .lower-headline{font-size:29px}
+html.tv-mode .ticker-shell{grid-row:6;position:relative;left:auto;right:auto;bottom:auto;height:var(--ticker);padding-bottom:0}
+html.tv-mode .ticker-shell:hover .ticker-track,html.tv-mode .ticker-shell:focus-within .ticker-track{animation-play-state:running}
+html.tv-mode .breaking{position:absolute;left:46.08px;right:46.08px;bottom:calc(25.92px + var(--ticker));height:var(--lower)}
+html.tv-mode .breaking strong{font-size:25.5px}
+html.tv-mode .utility{grid-row:4;padding:0;margin:0;min-height:0;overflow:hidden;pointer-events:none}
+html.tv-mode .utility summary{display:block;text-align:right;font-size:0;list-style:none}
+html.tv-mode .utility summary::-webkit-details-marker{display:none}
+html.tv-mode .utility summary span{font-size:10px;line-height:18px}
+html.tv-mode .utility>:not(summary){display:none}
