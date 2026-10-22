@@ -2,7 +2,7 @@
 // Presentation only: URL overrides the saved preference; no data/auth state is changed.
 window.InfoDeskTV = (() => {
   const key='dashboard_tv_mode',root=document.documentElement;
-  let enabled=false,lock=null,pending=false,epoch=0,pageHidden=false,fitFrame=0;
+  let enabled=false,lock=null,pending=false,epoch=0,pageHidden=false,fitFrame=0,exitTimer=null;
   const WIDTH=1920,HEIGHT=1080;
   try { const value=new URL(location.href).searchParams.get('tv');enabled=value==='1'||(value!=='0'&&localStorage.getItem(key)==='1');if(value==='1'||value==='0')localStorage.setItem(key,enabled?'1':'0'); } catch {}
   root.classList.toggle('tv-mode',enabled);
@@ -26,7 +26,14 @@ window.InfoDeskTV = (() => {
     if(!tickerAnimation||Math.abs(distance-tickerDistance)>1){tickerAnimation?.cancel();track.dataset.tvTicker='waapi';tickerDistance=distance;tickerAnimation=track.animate([{transform:'translate3d(0,0,0)'},{transform:`translate3d(-${distance}px,0,0)`}],{duration:distance/speed*1000,iterations:Infinity,easing:'linear'});tickerAnimation.currentTime=offset/speed*1000;}
     if(document.hidden||pageHidden)tickerAnimation.pause();else tickerAnimation.play();
   }
-  function label(){const button=document.querySelector('#tvToggle');if(!button)return;button.setAttribute('aria-pressed',String(enabled));button.setAttribute('aria-label',english()?(enabled?'Exit TV mode':'Enter TV mode'):(enabled?'離開 TV 模式':'開啟 TV 模式'));button.title=button.getAttribute('aria-label');button.dataset.awake=String(Boolean(lock&&!lock.released));}
+  function label(){const exit=document.querySelector('#tvExitButton');if(exit)exit.textContent=english()?'BACK TO NORMAL':'返回普通版';const button=document.querySelector('#tvToggle');if(!button)return;button.setAttribute('aria-pressed',String(enabled));button.setAttribute('aria-label',english()?(enabled?'Exit TV mode':'Enter TV mode'):(enabled?'離開 TV 模式':'開啟 TV 模式'));button.title=button.getAttribute('aria-label');button.dataset.awake=String(Boolean(lock&&!lock.released));}
+  function hideExit(){if(exitTimer!==null)clearTimeout(exitTimer);exitTimer=null;const button=document.querySelector('#tvExitButton');if(button)button.hidden=true;}
+  function revealExit(){
+    if(!enabled||pageHidden||document.hidden)return;
+    const button=document.querySelector('#tvExitButton');if(!button)return;
+    if(exitTimer!==null)clearTimeout(exitTimer);button.hidden=false;
+    exitTimer=setTimeout(hideExit,3000);
+  }
   async function release(){epoch++;const previous=lock;lock=null;label();if(previous)try{await previous.release()}catch{}}
   async function wake(){
     if(!enabled||pageHidden||document.visibilityState!=='visible'||pending||lock||!navigator.wakeLock?.request)return;
@@ -36,14 +43,19 @@ window.InfoDeskTV = (() => {
       lock=acquired;label();acquired.addEventListener('release',()=>{if(lock===acquired){lock=null;label()}});
     }catch{}finally{pending=false;}
   }
-  function visibility(){root.classList.toggle('tv-background',Boolean(document.hidden||pageHidden));if(document.hidden||pageHidden)release();else wake();tickerChanged();}
+  function visibility(){root.classList.toggle('tv-background',Boolean(document.hidden||pageHidden));if(document.hidden||pageHidden){hideExit();release()}else wake();tickerChanged();}
   function set(value,{url=true}={}){
     enabled=Boolean(value);root.classList.toggle('tv-mode',enabled);try{localStorage.setItem(key,enabled?'1':'0')}catch{}
     if(url)try{const next=new URL(location.href);next.searchParams.set('tv',enabled?'1':'0');history.replaceState(null,'',next)}catch{}
-    fit();label();if(enabled)wake();else release();tickerChanged();
+    hideExit();fit();label();if(enabled)wake();else release();tickerChanged();
     document.dispatchEvent(new CustomEvent('infodesk:tv',{detail:{enabled}}));window.dispatchEvent(new Event('resize'));
   }
   function init(){document.querySelector('#tvToggle').addEventListener('click',()=>set(!enabled));fit();label();wake();
+    document.querySelector('#tvExitButton')?.addEventListener('click',()=>set(false));
+    document.addEventListener('pointermove',revealExit,{passive:true});
+    // touchstart also supports older Safari without Pointer Events; do not prevent taps.
+    document.addEventListener('touchstart',revealExit,{passive:true});
+    document.addEventListener('keydown',event=>{if(!enabled)return;if(event.key==='Escape'){event.preventDefault();set(false)}else revealExit();});
     // Do not depend on CSS :has() support on older Safari; preserve crypto's saved state.
     const crypto=document.querySelector('#cryptoToggle');if(crypto){const sync=()=>crypto.closest('.crypto-panel')?.classList.toggle('tv-collapsed',crypto.getAttribute('aria-expanded')!=='true');new MutationObserver(sync).observe(crypto,{attributes:true,attributeFilter:['aria-expanded']});sync();}
     document.addEventListener('infodesk:language',label);
@@ -51,7 +63,7 @@ window.InfoDeskTV = (() => {
     window.addEventListener('pagehide',()=>{pageHidden=true;visibility()});window.addEventListener('pageshow',()=>{pageHidden=false;fit();visibility()});
     window.addEventListener('popstate',()=>{const value=new URL(location.href).searchParams.get('tv');if(value==='0'||value==='1')set(value==='1',{url:false})});
     // Retry a silent policy refusal only after a user gesture, never in a polling loop.
-    document.addEventListener('pointerdown',wake,{passive:true});
+    document.addEventListener('pointerdown',()=>{wake();revealExit()},{passive:true});
   }
   window.addEventListener('resize',scheduleFit);window.addEventListener('orientationchange',scheduleFit);window.visualViewport?.addEventListener('resize',scheduleFit);window.visualViewport?.addEventListener('scroll',scheduleFit);
   document.fonts?.ready.then(()=>{fit();tickerChanged()});

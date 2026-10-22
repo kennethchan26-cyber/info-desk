@@ -114,3 +114,8 @@ html.tv-mode .flash-down :is(.tv-price,.quote-price,.fx-rate,.rail-value,.ticker
 .tv-next-arrival{white-space:nowrap;color:#ddd6e5}.tv-next-arrival em{font-style:normal;color:#fff}
 html.tv-mode .tv-next-arrival,html.tv-mode .tv-next-arrival em{font-size:26px!important;line-height:1.25}
 
+/* Transient TV escape control: absolute overlay, never changes the broadcast grid. */
+#tvExitButton{display:none!important}
+html.tv-mode #tvExitButton:not([hidden]){display:block!important;position:absolute;top:16px;right:calc(var(--tv-width,1920px) * .01);z-index:10000;background:var(--orange,#FF8A00);color:#07060C;border:2px solid #fff;border-radius:0;box-shadow:none;font-family:var(--font);font-weight:900;font-size:max(32px,calc(16px / var(--tv-scale,1)))!important;line-height:1.2;padding:12px 22px;min-height:max(56px,calc(44px / var(--tv-scale,1)));cursor:pointer;touch-action:manipulation;pointer-events:auto!important}
+html.tv-mode #tvExitButton:focus-visible{outline:4px solid #fff;outline-offset:4px}
+
