@@ -12,6 +12,7 @@ window.InfoDeskDisplay=(()=>{
   function headerWeather(){const node=q('#headerWeather');if(!node)return;const data=state.weatherCache[en()?'en':'tc'],now=data?.[0],warnings=Object.values(data?.[3]||{}).filter(w=>w&&w.actionCode!=='CANCEL');
     const temps=all('#weather .temp').map(e=>e.textContent),icon=Number(now?.icon?.[0]),glyph=icon===65?'⛈':icon>=62&&icon<=64?'🌧':icon===50?'☀':icon>=51&&icon<=54?'🌤':icon>=70&&icon<=77?'☾':icon>=83&&icon<=85?'🌫':icon===80?'≋':icon===82?'💧':icon===93?'❄':icon>=90?'☀':'☁';
     node.innerHTML=`<span class="weather-symbol" role="img" aria-label="${tr('香港天氣','HK WEATHER')}">${glyph}</span><span>${tr('沙田','SHA TIN')} <b>${esc(temps[0]||'—')}</b></span><span>${tr('數碼港','CYBERPORT')} <b>${esc(temps[1]||'—')}</b></span><span class="header-warnings">${warnings.map(w=>`<b class="header-warning" title="${esc(w.name||'')}">${esc(shortWarning(w))}</b>`).join('')}</span>`;
+    const corner=q('#cornerWeather');if(corner)corner.innerHTML=node.innerHTML;
   }
   function fit(){document.documentElement.classList.toggle('paged-display',paged());if(!tv())document.documentElement.classList.toggle('desktop-pages',innerWidth>=768);else document.documentElement.classList.remove('desktop-pages');if(ready){window.InfoDeskTVPanels?.start();railTick(true);}}
   function railTick(force=false){if(!ready||tv()||innerWidth<768){all('.data-rail>.panel').forEach(e=>e.classList.remove('rail-hidden'));all('.rail-item-hidden').forEach(e=>e.classList.remove('rail-item-hidden'));return;}

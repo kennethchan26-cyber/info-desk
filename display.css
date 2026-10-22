@@ -119,3 +119,82 @@ html.tv-mode .tv-next-arrival,html.tv-mode .tv-next-arrival em{font-size:26px!im
 html.tv-mode #tvExitButton:not([hidden]){display:block!important;position:absolute;top:16px;right:calc(var(--tv-width,1920px) * .01);z-index:10000;background:var(--orange,#FF8A00);color:#07060C;border:2px solid #fff;border-radius:0;box-shadow:none;font-family:var(--font);font-weight:900;font-size:max(32px,calc(16px / var(--tv-scale,1)))!important;line-height:1.2;padding:12px 22px;min-height:max(56px,calc(44px / var(--tv-scale,1)));cursor:pointer;touch-action:manipulation;pointer-events:auto!important}
 html.tv-mode #tvExitButton:focus-visible{outline:4px solid #fff;outline-offset:4px}
 
+/* Broadcast corner: footer reserves real width; never overlays the ticker. */
+#broadcastCorner{display:none}
+.paged-display #broadcastCorner{display:flex;align-items:stretch;flex:0 0 auto;height:100%;background:#09070e;z-index:2}
+.paged-display .ticker-window{flex:1;min-width:0}
+.paged-display #headerWeather,.paged-display .status>#clock,.paged-display .status>div:nth-child(2){display:none!important}
+.desktop-pages{--ticker:80px}
+.desktop-pages .topbar{grid-template-columns:140px 200px minmax(0,1fr) 210px}
+.paged-display .corner-clock{display:flex;flex-direction:column;justify-content:center;align-items:center;border-left:3px solid var(--orange);padding:0 16px;min-width:145px;white-space:nowrap;line-height:1}
+.paged-display .corner-clock b{font-size:42px;line-height:1;font-variant-numeric:tabular-nums}
+.paged-display .corner-clock span{font-size:18px;line-height:1.35}
+.paged-display #cornerWeather{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:5px 10px;max-width:375px;padding:4px 12px;font-size:17px;border-left:1px solid #594563}
+.paged-display #cornerWeather b{font-size:24px}.paged-display #cornerWeather .weather-symbol{font-size:30px}
+.paged-display #cornerWeather .header-warnings{gap:3px}.paged-display #cornerWeather .header-warning{font-size:16px;padding:2px 5px}
+html.tv-mode #deskSurface{grid-template-rows:132px auto minmax(0,1fr) 32px 92px 100px}
+html.tv-mode .topbar{grid-template-columns:170px 300px minmax(0,1fr)}
+html.tv-mode .ticker-shell{height:100px}
+html.tv-mode .corner-clock{min-width:205px;padding:0 16px}
+html.tv-mode .corner-clock b{font-size:64px!important;line-height:1}
+html.tv-mode .corner-clock span{font-size:26px!important;line-height:1.1}
+html.tv-mode #cornerWeather{max-width:620px;gap:6px 14px;padding:3px 16px}
+html.tv-mode #cornerWeather>span,html.tv-mode #cornerWeather b{font-size:30px!important}
+html.tv-mode #cornerWeather .header-warning{font-size:26px!important;line-height:1.1}
+html.tv-mode #cornerWeather .weather-symbol{font-size:38px!important}
+html.tv-mode .breaking{bottom:110.8px}
+.breaking[data-level="preview"]{background:#00C853;color:#03190d;border-color:#00C853}
+.breaking[data-level="preview"] .breaking-badge{background:white;color:#008437}
+.breaking[data-level="preview"] small,.breaking[data-level="preview"] strong,.breaking[data-level="preview"] button{color:#03190d}
+
+/* Weighted stock matrix. Unlabelled tiny cells keep their area and chart target. */
+.heatmap-view{height:100%;min-height:0;display:grid;grid-template-rows:auto minmax(0,1fr) auto;gap:10px}
+.heatmap-summary{display:flex;flex-wrap:wrap;gap:6px 20px;align-items:center;font-size:19px}
+.heatmap-summary b{font-size:26px}.heatmap-note{font-size:12px;color:#c6bed0}
+.heatmap-canvas{min-width:0;min-height:0;overflow:hidden}
+.heatmap-canvas svg{display:block}.heatmap-canvas g{cursor:pointer}.heatmap-canvas g:focus rect,.heatmap-canvas g:hover rect{stroke:#fff;stroke-width:2}
+.heatmap-mini{display:block}.heatmap-mini .heatmap-canvas{height:100%}
+.paged-display .tv-type-heatmap{display:block}
+html.tv-mode .heatmap-summary b{font-size:36px!important}
+html.tv-mode .heatmap-summary{gap:8px 24px}
+html.tv-mode .heatmap-note{display:none}
+html.tv-mode .heatmap-view{grid-template-rows:auto minmax(0,1fr)}
+.heatmap-mobile-page{display:none}
+@media(max-width:767px){html:not(.tv-mode) .heatmap-mobile-page{display:block!important;order:13}html:not(.tv-mode) #mobileHeatmap{height:580px;padding:12px}html:not(.tv-mode) .heatmap-summary b{font-size:24px}html:not(.tv-mode) .heatmap-summary{font-size:15px}html:not(.tv-mode) .heatmap-note{font-size:12px}}
+
+/* Independent 10-second TV rails, offset by5 seconds. No vertical motion. */
+html.tv-mode .tv-rail-panel header{display:flex;justify-content:space-between;align-items:center;gap:12px}
+html.tv-mode .tv-rail-panel header h2{white-space:nowrap;font-size:36px!important}
+html.tv-mode .rail-counter{font-size:26px!important;white-space:nowrap;color:#d9cedf}
+html.tv-mode #tvRailTransitBody,html.tv-mode #tvRailFxBody{display:grid;grid-template-columns:1fr;grid-template-rows:none;grid-auto-rows:minmax(0,1fr);min-height:0;gap:0;padding:4px 14px;overflow:hidden}
+html.tv-mode .tv-fast-row{grid-template-columns:125px minmax(0,1fr) 135px;gap:8px}
+html.tv-mode .tv-fast-row>span{font-size:28px!important}
+html.tv-mode #tvRailTransitBody[data-rail-type="indices"],html.tv-mode #tvRailFxBody[data-rail-type="fx"]{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(3,minmax(0,1fr));gap:0 14px}
+html.tv-mode .rail-stock{display:grid;grid-template-columns:1fr auto;grid-template-rows:auto auto;gap:0 6px;align-content:center;border-bottom:1px solid #49334f;min-height:0}
+html.tv-mode .rail-stock>b{grid-column:1;font-size:26px!important;align-self:center}
+html.tv-mode .rail-stock strong{grid-column:2;grid-row:1 / 3;font-size:56px!important;align-self:center}
+html.tv-mode .rail-stock .quote-change{grid-column:1;white-space:nowrap;font-size:26px!important}
+html.tv-mode [data-rail-type="indices"] .rail-stock{display:grid;grid-template-columns:1fr auto;gap:0 5px;align-items:center}
+html.tv-mode [data-rail-type="indices"] .rail-stock strong{font-size:56px!important}
+html.tv-mode [data-rail-type="indices"] .rail-stock>b{font-size:26px!important}
+html.tv-mode [data-rail-type="indices"] .rail-stock .quote-change{font-size:26px!important}
+html.tv-mode .tv-rail-fx{display:grid;grid-template-columns:auto 1fr;align-content:center;gap:0 8px;min-height:0}
+html.tv-mode .tv-rail-fx>strong{font-size:56px!important;justify-self:end}
+html.tv-mode .tv-rail-fx>span{grid-column:1 / -1;text-align:right;white-space:nowrap}
+html.tv-mode .tv-rail-fx>.tv-tag{align-self:center;justify-self:start}
+html.tv-mode .rail-day{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #49334f;gap:10px}
+html.tv-mode .rail-day strong{font-size:56px!important}
+html.tv-mode .rail-trend{display:flex;align-items:center;gap:18px;border-bottom:1px solid #49334f}
+html.tv-mode .rail-trend>b{font-size:48px!important;color:var(--orange)}html.tv-mode .rail-trend strong{font-size:32px!important}
+html.tv-mode .rail-clock{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;border-bottom:1px solid #49334f}
+html.tv-mode .rail-clock .countdown-number{font-size:56px!important}.rail-clock .countdown-hours,.rail-clock .countdown-date{display:none!important}
+html.tv-mode .rail-clock .countdown-label{font-size:30px!important}
+html.tv-mode .rail-news{display:flex;flex-direction:column;justify-content:center;gap:16px}
+html.tv-mode .rail-news>b{color:var(--orange)}html.tv-mode .rail-news strong{font-size:32px!important;line-height:1.25}
+html.tv-mode .rail-warning{display:flex;align-items:center;background:#bd193b;color:white;padding:16px;font-size:32px!important;line-height:1.35}
+html.tv-mode [data-rail-type="indices"] .rail-stock{grid-template-columns:minmax(0,1fr) auto;grid-template-rows:56px 26px;align-content:center}
+html.tv-mode [data-rail-type="indices"] .rail-stock strong{grid-row:1;line-height:1}
+html.tv-mode [data-rail-type="indices"] .rail-stock>b{grid-row:1;line-height:1}
+html.tv-mode [data-rail-type="indices"] .rail-stock .quote-change{grid-row:2;grid-column:1 / -1;line-height:1;text-align:right}
+html.tv-mode .tv-rail-fx>strong,html.tv-mode .tv-rail-fx>span{line-height:1}
+

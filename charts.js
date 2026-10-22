@@ -9,7 +9,8 @@ window.InfoDeskCharts = (() => {
   const english=()=>Boolean(window.InfoDeskI18n?.en()),L=(tc,en)=>english()?en:tc;
   const safe=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const config=()=>window.DASHBOARD_CONFIG||{},allItems=()=>[...(config().HK_MARKET||[]),...(config().US_MARKET||[])];
-  const itemFor=symbol=>allItems().find(x=>x.yahoo===symbol)||{yahoo:symbol,name:symbol};
+  const knownSymbol=symbol=>allItems().some(x=>x.yahoo===symbol)||(window.INFO_DESK_NASDAQ?.stocks||[]).some(x=>x.symbol===symbol);
+  const itemFor=symbol=>allItems().find(x=>x.yahoo===symbol)||{yahoo:symbol,name:(window.INFO_DESK_NASDAQ?.stocks||[]).find(x=>x.symbol===symbol)?.name||symbol};
   const translatedName=symbol=>window.InfoDeskI18n?.t(itemFor(symbol).name)||itemFor(symbol).name;
   const fmt=value=>Number.isFinite(value)?value.toLocaleString('en-HK',{minimumFractionDigits:2,maximumFractionDigits:2}):'—';
   const key=(symbol,range)=>symbol+'|'+range;
@@ -67,7 +68,7 @@ window.InfoDeskCharts = (() => {
   function parseResponse(body){if(typeof body!=='string')return body;const start=body.indexOf('{'),end=body.lastIndexOf('}');if(start<0||end<start)throw new Error('Invalid chart response');return JSON.parse(body.slice(start,end+1).replace(/\r?\n\s*/g,''));}
   function targetURL(symbols,range='1d'){return 'https://query1.finance.yahoo.com/v7/finance/spark?symbols='+encodeURIComponent(symbols.join(','))+'&range='+range+'&interval='+RANGE[range].interval;}
   async function fetchBatch(symbols,range='1d'){
-    const unique=[...new Set(symbols)].filter(s=>allItems().some(x=>x.yahoo===s));if(!unique.length)return;
+    const unique=[...new Set(symbols)].filter(knownSymbol);if(!unique.length)return;
     const taskKey=unique.join(',')+'|'+range;if(inflight.has(taskKey))return inflight.get(taskKey);
     const diagnostic={symbols:[...unique],range,transport:location.protocol==='chrome-extension:'?'Yahoo direct':'Jina public reader',started:Date.now(),completed:null,durationMs:null,status:'pending',lastError:null,missing:[]};
     batchDiagnostics.set(taskKey,diagnostic);while(batchDiagnostics.size>40)batchDiagnostics.delete(batchDiagnostics.keys().next().value);
@@ -95,9 +96,9 @@ window.InfoDeskCharts = (() => {
       const batch=symbols.slice(i,i+BATCH),id=batch.join(',');if(scheduled.has(id))continue;
       const handle=setTimeout(()=>{scheduled.delete(id);if(document.hidden)return;const now=Date.now(),due=batch.filter(s=>now-(lastAttempt.get(key(s,'1d'))||0)>=PERIOD-1000&&(failureUntil.get(key(s,'1d'))||0)<=now);if(due.length)fetchBatch(due);},START_DELAY+Math.floor(i/BATCH)*STAGGER);scheduled.set(id,handle);
     }
-    if(modal?.open&&modalSymbol){const range=modal.dataset.range||'1d';if(range!=='1d')ensure(modalSymbol,range);}
+    if(modal?.open&&modalSymbol)ensure(modalSymbol,modal.dataset.range||'1d');
   }
-  function ensure(symbol,range){const now=Date.now();if(range==='1d'){if(!lastAttempt.has(key(symbol,range)))refreshVisible();return;}if(now-(lastAttempt.get(key(symbol,range))||0)>=PERIOD&&(failureUntil.get(key(symbol,range))||0)<=now)fetchBatch([symbol],range);}
+  function ensure(symbol,range){const now=Date.now();if(range==='1d'&&allItems().some(x=>x.yahoo===symbol)){if(!lastAttempt.has(key(symbol,range)))refreshVisible();return;}if(now-(lastAttempt.get(key(symbol,range))||0)>=PERIOD&&(failureUntil.get(key(symbol,range))||0)<=now)fetchBatch([symbol],range);}
   function widgetSymbol(symbol){
     // Use actual index tickers, not CFD substitutes, for the six indices.
     const fixed={'^HSI':'HSI:HSI','^HSCE':'HSI:HSCEI','HSTECH.HK':'HSI:HSTECH','^DJI':'DJ:DJI','^GSPC':'SP:SPX','^IXIC':'NASDAQ:IXIC','BRK-B':'NYSE:BRK.B',TSM:'NYSE:TSM',JPM:'NYSE:JPM'};
@@ -181,7 +182,7 @@ window.InfoDeskCharts = (() => {
   }
   function renderAll(){for(const [node,entry]of mounted){if(!node.isConnected){clearChart(entry);mounted.delete(node);continue;}render(entry);}}
   function mount(node,options={}){
-    if(!node)return;const symbol=options.symbol||node.dataset.chartSymbol;if(!allItems().some(x=>x.yahoo===symbol))return;
+    if(!node)return;const symbol=options.symbol||node.dataset.chartSymbol;if(!knownSymbol(symbol))return;
     const mode=options.compact?'spark':options.mode||node.dataset.chartMode||'index',range=RANGE[options.range||node.dataset.chartRange]?options.range||node.dataset.chartRange:'1d',tv=options.tv??(node.dataset.chartTv==='true'||Boolean(window.InfoDeskTV?.enabled()));
     const previous=mounted.get(node);if(previous&&previous.symbol===symbol&&previous.mode===mode&&previous.range===range&&previous.tv===tv){render(previous);ensure(symbol,range);return previous;}
     if(previous)clearChart(previous);const entry={node,symbol,mode,range,tv};mounted.set(node,entry);cardInit(entry);render(entry);ensure(symbol,range);return entry;
@@ -189,7 +190,7 @@ window.InfoDeskCharts = (() => {
   function scan(root=document){for(const [node,entry]of mounted)if(!node.isConnected){clearChart(entry);mounted.delete(node);}if(root.matches?.('[data-chart-symbol]'))mount(root);root.querySelectorAll?.('[data-chart-symbol]').forEach(node=>{if(mountedVisible(node))mount(node);});}
   function destroyWithin(root){for(const [node,entry]of mounted)if(node===root||root.contains(node)){clearChart(entry);mounted.delete(node);}}
   function open(symbol){
-    if(window.InfoDeskTV?.enabled()||!allItems().some(x=>x.yahoo===symbol))return;
+    if(window.InfoDeskTV?.enabled()||!knownSymbol(symbol))return;
     if(!modal){modal=document.createElement('dialog');modal.id='chartModal';modal.className='chart-modal';modal.innerHTML='<div class="chart-modal-bar"><strong>INFO//DESK</strong><nav class="chart-range-controls"></nav><button class="chart-close" type="button" aria-label="Close">×</button></div><div class="chart-modal-content"></div><div class="chart-credit"><a href="https://www.tradingview.com/" target="_blank" rel="noopener noreferrer">TradingView Lightweight Charts™</a> · Copyright (с) 2025 TradingView, Inc.</div>';document.body.append(modal);modal.querySelector('.chart-close').onclick=()=>modal.close();modal.addEventListener('click',e=>{if(e.target===modal)modal.close()});modal.addEventListener('close',()=>{destroyWithin(modal);modal.querySelector('.chart-modal-content').replaceChildren();document.body.classList.remove('chart-modal-open');modalSymbol=null;});}
     modalSymbol=symbol;document.body.classList.add('chart-modal-open');if(!modal.open)modal.showModal();setModalRange('1d');
   }

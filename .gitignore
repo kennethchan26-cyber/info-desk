@@ -40,3 +40,8 @@
 !/lightweight-charts.standalone.production.js
 !/LIGHTWEIGHT-CHARTS-LICENSE.txt
 !/LIGHTWEIGHT-CHARTS-NOTICE.txt
+
+!/bus-preview.js
+!/nasdaq100.js
+!/heatmap.js
+!/tv-rail.js
