@@ -27,9 +27,10 @@ def num(value):
         return x if math.isfinite(x) else None
     except (TypeError,ValueError): return None
 def run(args, input=None, timeout=50):
-    result=subprocess.run([str(x) for x in args],input=input,capture_output=True,text=True,encoding='utf-8',errors='replace',timeout=timeout,creationflags=CREATE_NO_WINDOW)
+    payload=input.encode('utf-8') if isinstance(input,str) else input
+    result=subprocess.run([str(x) for x in args],input=payload,capture_output=True,timeout=timeout,creationflags=CREATE_NO_WINDOW)
     if result.returncode: raise RuntimeError('COMMAND_FAILED')
-    return result.stdout
+    return result.stdout.decode('utf-8',errors='replace')
 def call(*args):
     if not args or args[0] not in ALLOWED or '--filter' in args or any(x in args for x in ('positions','watchlist','--verbose','-v')):
         raise ValueError('FORBIDDEN_COMMAND')
@@ -138,6 +139,11 @@ def collect(config, old):
     data['collectedAt']=stamp();data['coverage']={'quotes':successes,'requested':len(symbols),'intraday':len(data['intraday'])}
     return data
 
+def tree_record(blob):
+    # Windows text-mode stdin changes LF to CRLF. Git -z requires NUL instead,
+    # so no stray carriage return can become part of the public filename.
+    return '100644 blob '+blob+'\tmarket.json\0'
+
 def git_publish(data):
     runtime=json.loads((LOCAL/'runtime.json').read_text('utf-8')) if (LOCAL/'runtime.json').exists() else {}
     git=shutil.which('git') or str(pathlib.Path.home()/'.cache/codex-runtimes/codex-primary-runtime/dependencies/native/git/cmd/git.exe')
@@ -152,10 +158,15 @@ def git_publish(data):
     head=g('ls-remote',REPO,'refs/heads/data').split(); expected=head[0] if head else ''
     if expected:
         g('fetch','--depth=1',REPO,'refs/heads/data')
-        previous=json.loads(g('show','FETCH_HEAD:market.json'))
+        names=[name for name in g('ls-tree','-z','--name-only','FETCH_HEAD').split('\0') if name]
+        # Recognise only our single-file branch, including the initial Windows
+        # CRLF bootstrap typo, and verify its marker before replacing it.
+        if names not in (['market.json'],['market.json\r']):raise RuntimeError('UNRECOGNISED_DATA_BRANCH')
+        previous=json.loads(g('show','FETCH_HEAD:'+names[0]))
         if previous.get('publisher')!='INFO-DESK-LONGBRIDGE':raise RuntimeError('UNRECOGNISED_DATA_BRANCH')
     blob=g('hash-object','-w','--stdin',input=json.dumps(data,ensure_ascii=False,separators=(',',':'))+'\n')
-    tree=g('mktree',input='100644 blob '+blob+'\tmarket.json\n')
+    tree=g('mktree','-z',input=tree_record(blob))
+    if g('ls-tree','-z','--name-only',tree)!='market.json\0':raise RuntimeError('INVALID_PUBLIC_TREE')
     commit=g('-c','user.name=INFO-DESK Publisher','-c','user.email=infodesk@users.noreply.github.com','commit-tree',tree,input='Public market snapshot\n')
     g('push','--force-with-lease=refs/heads/data:'+expected,REPO,commit+':refs/heads/data')
     return commit

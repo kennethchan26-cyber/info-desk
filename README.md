@@ -6,6 +6,8 @@
 
 完整架構、來源限制、更新頻率、排程安裝／暫停及 20 分鐘後備規則見 [LONGBRIDGE.md](LONGBRIDGE.md)。以下較舊章節中的 Yahoo 來源敘述，現為後備來源；Frankfurter 外匯、其他資料及非即日圖表來源不變。
 
+23/10/2026 11:47 HKT：本機 GitHub 授權及行情推送已完成，Windows 排程已啟用。行情獨立推送到 `data` 的單一無父 commit，不逐分鐘觸發 Pages 重建。
+
 中／EN 即時切換並記住選擇，預設繁體中文。中文日/月/年，英文例如 21 Oct 2026，均用香港 24 小時制。相同 HTML/CSS/JavaScript 同時支援 GitHub Pages 純靜態網頁及 Chrome Manifest V3 新分頁擴充功能。不需要本機代理或後端。
 
 
