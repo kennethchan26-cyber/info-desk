@@ -55,6 +55,7 @@
 !/publisher/export-config.cjs
 !/publisher/install-task.ps1
 !/publisher/control-task.ps1
+!/publisher/connect-windows.ps1
 # Credentials, generated snapshots, local deployment workspaces and logs stay private.
 .env*
 **/*token*

@@ -1,6 +1,6 @@
 # INFO//DESK 長橋行情
 
-介面版本：23/10/2026 10:20 HKT；本機排程於 23/10/2026 11:47 HKT 啟用。只讀公開行情，沒有交易、落單、資產或持倉功能。
+介面版本：23/10/2026 10:20 HKT。23/10/2026 背景執行測試發現 Windows 工作排程器看不到 Codex 命令環境的 GitHub 登入及 runtime 設定；排程已暫停，等待在普通 Windows 視窗完成連接。只讀公開行情，沒有交易、落單、資產或持倉功能。
 
 ## 改動前與改動後
 
@@ -19,7 +19,7 @@
 
 - `main`：只放介面程式；本次更新一次 Pages，不逐分鐘重建。
 - `data`：只有公開 `market.json`，每次建立無父 commit 的新快照，再以 `--force-with-lease` 更新此分支；不強推 main。
-- GitHub CLI 已在本機授權；實際推送及公開 raw 網址已驗證。`data` 已轉為無父 commit，檔案樹只有 `market.json`，不會累積可達快照歷史。
+- Codex 命令環境的 GitHub CLI 已授權，手動推送及公開 raw 網址已驗證。Windows 背景環境仍未登入，不能聲稱排程已完成。`data` 已轉為無父 commit，檔案樹只有 `market.json`，不會累積可達快照歷史。
 - 長橋報價收集約每 2 分鐘；美股盤前／盤後／夜盤亦視為活躍時段。沿用 HKEX / NYSE 2026–2027 日曆及紐約時區。全部休市時約每 15 分鐘。
 - 工作排程器每分鐘喚醒檢查，未到時間即退出。慢速請求會令實際間距略長；重疊執行會被忽略。
 - 前端每分鐘讀 raw.githubusercontent.com，以分鐘 query 減少舊 CDN 快照。正常約 2–5 分鐘新鮮度，但 GitHub raw 快取及網絡沒有時效保證。
@@ -51,6 +51,8 @@
 
 需 Windows、Python 3.14、Node、Git、Longbridge CLI 及 GitHub CLI；後兩者先在本機完成登入。專案目錄執行：
 
+本次請先在**普通 Windows PowerShell**（不是 Codex 命令環境）執行 `publisher/connect-windows.ps1`，用 `-GitHubCLI` 指定已安裝的 gh.exe。腳本會讓使用者在瀏覽器登入、在真正背景環境寫入非機密設定，成功推送一次後才啟用排程；不搬移任何 token。本機另有未上載的 `CONNECT-PUBLISHER.cmd`，可在檔案總管雙擊開啟此連接程序。
+
 ```powershell
 py -3.14 publisher/collect.py                 # 只收集、檢查本機 market.json
 py -3.14 publisher/collect.py --publish       # 收集及發佈 data 分支
@@ -63,6 +65,8 @@ powershell -File publisher/control-task.ps1 -Action Status
 工作排程器名稱：`INFO-DESK Longbridge Market Publisher`。也可直接在工作排程器右鍵「停用」。排程只在使用者已登入 Windows 時運行，鎖定螢幕可運行，登出不可；不儲存 Windows 密碼、不改電源設定。
 
 本機 `LOCALAPPDATA/INFO-DESK/publisher/health.json` 記錄最近成功／失敗分類；`market.json` 為最近公開快照；`data-git` 為專用行情分支倉庫。
+
+`check.json` 是背景檢查步驟／時間；專案根目錄 `.publisher-status.json` 是不含憑證的結果副本，方便核對真正背景程序。兩者都不會上載。日誌不保存原始錯誤回應、token 或登入檔。
 
 電腦休眠／關機／斷網後：公開網站仍開到。快照或個別報價超過 **20 分鐘**，自動改用 Yahoo；外匯一直用 Frankfurter。新增長橋分析過期時顯示未能取得數據，不假裝有新資料。原有來源也失敗則依原有錯誤／離線處理；沒有來源能保證永不斷線。
 

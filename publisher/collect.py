@@ -5,7 +5,7 @@ stderr are never persisted. Only explicit public fields enter market.json.
 """
 from __future__ import annotations
 import argparse, concurrent.futures, datetime as dt, json, math, os, pathlib
-import shutil, subprocess, sys, time
+import shutil, subprocess, sys, time, traceback
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 LOCAL = pathlib.Path(os.environ.get('LOCALAPPDATA', str(pathlib.Path.home()))) / 'INFO-DESK' / 'publisher'
@@ -18,6 +18,15 @@ FAILURES = []
 CREATE_NO_WINDOW = 0x08000000 if os.name == 'nt' else 0
 
 def stamp(): return dt.datetime.now(UTC).isoformat(timespec='seconds').replace('+00:00','Z')
+def checkpoint(stage, **fields):
+    # Safe scheduler heartbeat, separate from the last successful publication.
+    (LOCAL/'check.json').write_text(json.dumps({'time':stamp(),'stage':stage,**fields}),'utf-8')
+def write_health(info):
+    public=json.dumps(info)
+    (LOCAL/'health.json').write_text(public,'utf-8')
+    # Credential-free diagnostic bridge for environments with separate user stores.
+    # This local file is excluded from main and is never part of the data tree.
+    (ROOT/'.publisher-status.json').write_text(public,'utf-8')
 def epoch(value):
     try: return dt.datetime.fromisoformat(value.replace('Z','+00:00')).timestamp()
     except (ValueError, TypeError, AttributeError): return 0
@@ -147,10 +156,12 @@ def tree_record(blob):
 def git_publish(data):
     runtime=json.loads((LOCAL/'runtime.json').read_text('utf-8')) if (LOCAL/'runtime.json').exists() else {}
     git=shutil.which('git') or str(pathlib.Path.home()/'.cache/codex-runtimes/codex-primary-runtime/dependencies/native/git/cmd/git.exe')
-    gh=shutil.which('gh') or runtime.get('gh','')
+    gh=runtime.get('gh') or shutil.which('gh') or ''
     if not gh or not pathlib.Path(gh).is_file():raise RuntimeError('GITHUB_LOGIN_REQUIRED')
     # gh uses its own protected local credential store; never print/export a token.
-    run([gh,'auth','status','--hostname','github.com'])
+    checkpoint('github_auth')
+    try:run([gh,'auth','status','--active','--hostname','github.com'])
+    except Exception as error:raise RuntimeError('GITHUB_LOGIN_REQUIRED') from error
     path=LOCAL/'data-git'; path.mkdir(parents=True,exist_ok=True)
     helper='!"'+gh.replace('\\','/')+'" auth git-credential'
     def g(*args,input=None):return run([git,'-C',path,'-c','credential.helper=','-c','credential.helper='+helper,*args],input,timeout=90).strip()
@@ -174,18 +185,23 @@ def git_publish(data):
 def main():
     parser=argparse.ArgumentParser();parser.add_argument('--publish',action='store_true');parser.add_argument('--scheduled',action='store_true');args=parser.parse_args()
     LOCAL.mkdir(parents=True,exist_ok=True)
+    checkpoint('starting',scheduled=args.scheduled)
     lock=open(LOCAL/'run.lock','a+b');lock.seek(0)
     if os.name=='nt':
         import msvcrt
         try:msvcrt.locking(lock.fileno(),msvcrt.LK_NBLCK,1)
-        except OSError:return 0
+        except OSError as error:
+            checkpoint('locked',errno=error.errno);return 0
     try:
         config=json.loads(run([shutil.which('node') or 'node',ROOT/'publisher/export-config.cjs']))
         output=LOCAL/'market.json';old=json.loads(output.read_text('utf-8')) if output.exists() else {}
         # US extended-hours requests continue on weekdays; no account APIs required.
         active=config['active']
         interval=config['settings']['ACTIVE_SECONDS' if active else 'CLOSED_SECONDS']
-        if args.scheduled and time.time()-epoch(old.get('collectedAt'))<interval-5:return 0
+        age=time.time()-epoch(old.get('collectedAt'))
+        if args.scheduled and age<interval-5:
+            checkpoint('not_due',ageSeconds=round(age),intervalSeconds=interval);return 0
+        checkpoint('collecting',scheduled=args.scheduled,ageSeconds=round(age),intervalSeconds=interval)
         data=collect(config,old)
         public=json.dumps(data,ensure_ascii=False,separators=(',',':'))+'\n'
         temp=output.with_suffix('.tmp');temp.write_text(public,'utf-8');temp.replace(output)
@@ -193,10 +209,12 @@ def main():
         (ROOT/'market.json').write_text(public,'utf-8')
         sha=git_publish(data) if args.publish else None
         health={'time':stamp(),'result':'published' if sha else 'collected','coverage':data['coverage'],'failedCommandTypes':sorted(set(FAILURES)),'commit':sha}
-        (LOCAL/'health.json').write_text(json.dumps(health),'utf-8');print(json.dumps(health));return 0
+        write_health(health);checkpoint('published' if sha else 'collected',scheduled=args.scheduled);print(json.dumps(health));return 0
     except Exception as exc:
         code=str(exc) if str(exc) in {'GITHUB_LOGIN_REQUIRED','UNRECOGNISED_DATA_BRANCH','NO_QUOTES'} else 'PUBLISHER_FAILED'
-        (LOCAL/'health.json').write_text(json.dumps({'time':stamp(),'result':code}),'utf-8');print(code);return 1
+        frames=[{'file':pathlib.Path(f.filename).name,'function':f.name,'line':f.lineno} for f in traceback.extract_tb(exc.__traceback__)]
+        previousCheck=json.loads((LOCAL/'check.json').read_text('utf-8')) if (LOCAL/'check.json').exists() else {}
+        write_health({'time':stamp(),'result':code,'errorType':type(exc).__name__,'frames':frames});checkpoint('failed',code=code,errorType=type(exc).__name__,frames=frames,context=previousCheck);print(code);return 1
     finally:lock.close()
 
 if __name__=='__main__':sys.exit(main())
