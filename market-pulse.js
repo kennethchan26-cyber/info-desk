@@ -17,7 +17,7 @@ window.InfoDeskMarketPulse=(()=>{
     const q=lb()?.current()?.quotes?.NVDA?.extended?.overnight;if(q?.time&&Date.now()-Date.parse(q.time)<20*60000)return tr('夜盤','OVERNIGHT');
     return tr('休市','CLOSED');
   }
-  function pulseItems(){const p=extra('pulse'),items=[];for(const m of ['HK','US']){const t=p?.temperature?.[m];items.push(card(tr(m==='HK'?'港股溫度':'美股溫度',m+' TEMPERATURE'),t?fmt(t.temperature,0)+'<em>/100</em>':'—',`${E(session(m))}<br>${tr('估值','VALUATION')} ${fmt(t?.valuation,0)} · ${tr('情緒','SENTIMENT')} ${fmt(t?.sentiment,0)}`));}
+  function pulseItems(){const p=extra('pulse'),items=[];for(const m of ['HK','US']){const raw=p?.temperature?.[m],t=raw&&lb().fresh(raw.fetchedAt||p.fetchedAt)?raw:null;items.push(card(tr(m==='HK'?'港股溫度':'美股溫度',m+' TEMPERATURE'),t?fmt(t.temperature,0)+'<em>/100</em>':'—',`${E(session(m))}<br>${tr('估值','VALUATION')} ${fmt(t?.valuation,0)} · ${tr('情緒','SENTIMENT')} ${fmt(t?.sentiment,0)}`));}
     for(const a of extra('ah')?.items||[])items.push(card(a.symbol,signed(a.hVsAPct)+'%',tr('H 股較 A 股溢價／折讓','H-SHARE PREMIUM / DISCOUNT TO A')+`<br>${tr('按匯率折算；來源日期','FX-ADJUSTED; SOURCE DATE')} ${E(lb().date(Number(a.time)*1000))}`));return items;
   }
   function capitalItems(){return (extra('capital')?.items||[]).map(x=>card(x.symbol,signed(x.net/1e6)+'<em> M '+E(x.currency)+'</em>',`${E(x.name)}<br>${tr('大單流入 − 大單流出','LARGE-ORDER INFLOW − OUTFLOW')}`));}

@@ -75,13 +75,16 @@ def collect(config, old):
             if t and p and p>0:points.append([int(t),p,v])
         if len(points)>1:data['intraday'][item['yahoo']]={'fetchedAt':stamp(),'points':sorted(points),'granularity':'1m'}
     extras=data['extras']; interval=config['settings']['EXTRAS_SECONDS']
-    if not fresh(extras.get('pulse'),interval):
-        temps=parallel([lambda m=m:call('market-temp',m) for m in ('HK','US')]); statuses=call('market-status')
-        temperature={}
+    old_pulse=extras.get('pulse',{})
+    needs_temperature=not fresh(old_pulse,interval) or any(not fresh(old_pulse.get('temperature',{}).get(m),interval) for m in ('HK','US'))
+    if needs_temperature:
+        # Serial quote contexts avoid intermittent provider rejection of simultaneous temperature calls.
+        temps=[call('market-temp',m) for m in ('HK','US')]; statuses=call('market-status')
+        temperature={m:{**v,'fetchedAt':v.get('fetchedAt',old_pulse.get('fetchedAt'))} for m,v in old_pulse.get('temperature',{}).items()}
         for m,rows in zip(('HK','US'),temps):
             if not isinstance(rows,list):continue
             d={r.get('field'):r.get('value') for r in rows}
-            if num(d.get('Temperature')) is not None:temperature[m]={'temperature':num(d.get('Temperature')),'valuation':num(d.get('Valuation')),'sentiment':num(d.get('Sentiment')),'description':str(d.get('Description',''))[:180]}
+            if num(d.get('Temperature')) is not None:temperature[m]={'temperature':num(d.get('Temperature')),'valuation':num(d.get('Valuation')),'sentiment':num(d.get('Sentiment')),'description':str(d.get('Description',''))[:180],'fetchedAt':stamp()}
         if temperature:extras['pulse']={'fetchedAt':stamp(),'temperature':temperature,'status':{r['market']:r['status'] for r in (statuses or []) if r.get('market') in ('HK','US')}}
     if not fresh(extras.get('capital'),interval):
         watch=[x for x in config['watch'] if not x['index']]; capital=parallel([lambda x=x:call('capital',x['symbol']) for x in watch]); items=[]
