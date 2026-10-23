@@ -3,6 +3,16 @@
    請勿在此放 Gmail 密碼、Google Client Secret 或任何私人資料。
    ================================================================ */
 window.DASHBOARD_CONFIG = {
+  // Public snapshots only. Never put Longbridge credentials in this file.
+  LONGBRIDGE: {
+    ENABLED: true,
+    URL: "https://raw.githubusercontent.com/kennethchan26-cyber/info-desk/data/market.json",
+    MAX_AGE_MS: 1200000,
+    ACTIVE_SECONDS: 120, CLOSED_SECONDS: 900,
+    INTRADAY_SECONDS: 300, EXTRAS_SECONDS: 900,
+    SYMBOLS: {"^HSI":"HSI.HK","^HSCE":"HSCEI.HK","HSTECH.HK":"HSTECH.HK","^DJI":".DJI.US","^GSPC":".SPX.US","^IXIC":".IXIC.US","BRK-B":"BRK.B.US"},
+    AH: ["2318.HK", "3968.HK"]
+  },
   GMAIL: {
     WEB_CLIENT_ID: "591775724134-779o2m1f5oudgkc32ufblsbccbl14sr2.apps.googleusercontent.com",
     EXTENSION_CLIENT_ID: "591775724134-779o2m1f5oudgkc32ufblsbccbl14sr2.apps.googleusercontent.com",
@@ -16,7 +26,8 @@ window.DASHBOARD_CONFIG = {
     { yahoo: "0700.HK", tv: "HKEX:700", name: "0700 騰訊" },
     { yahoo: "0005.HK", tv: "HKEX:5", name: "0005 匯豐" },
     { yahoo: "9988.HK", tv: "HKEX:9988", name: "9988 阿里巴巴" },
-    { yahoo: "0388.HK", tv: "HKEX:388", name: "0388 港交所" }
+    { yahoo: "0388.HK", tv: "HKEX:388", name: "0388 港交所" },
+    { yahoo: "2800.HK", tv: "HKEX:2800", name: "2800 盈富基金" }
   ],
   US_MARKET: [
     { yahoo: "^DJI", tv: "FOREXCOM:DJI", name: "道瓊斯", alertIndex: "DJI" },
@@ -44,8 +55,8 @@ window.DASHBOARD_CONFIG = {
   BUS_PREVIEW_MINUTES: 12, // 每條路線 previewAlert:false 可關閉綠色預告
   TV_RAIL: {
     INTERVAL_MS: 10000, OFFSET_MS: 5000,
-    UPPER: ['arrivals','indices','hk-movers','us-movers','trends'],
-    LOWER: ['fx','forecast','heatmap','clocks','us-news']
+    UPPER: ['arrivals','indices','hk-movers','us-movers','trends','lb-anomalies'],
+    LOWER: ['fx','forecast','heatmap','clocks','us-news','lb-temperature']
   },
   HEATMAP: { INTERVAL_MS:60000, BATCH_SIZE:20, STAGGER_MS:10000 },
   FX: {

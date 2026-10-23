@@ -161,9 +161,10 @@ function renderFx(){if(!state.fxRows)return;
 function parseJinaJSON(text){const marker="Markdown Content:";const raw=text.includes(marker)?text.slice(text.indexOf(marker)+marker.length):text;const start=raw.indexOf("{"),end=raw.lastIndexOf("}");if(start<0||end<start)throw new Error("invalid market response");return JSON.parse(raw.slice(start,end+1).replace(/\r?\n\s*/g,""))}
 function quoteFromMeta(item,meta){if(!meta)throw new Error("no quote");const price=Number(meta.regularMarketPrice);if(!Number.isFinite(price)||price<=0)throw new Error("invalid price");let pct=meta.regularMarketChangePercent==null?NaN:Number(meta.regularMarketChangePercent);if(!Number.isFinite(pct)){const prev=Number(meta.chartPreviousClose||meta.previousClose);if(!prev)throw new Error("no quote");pct=(price-prev)/prev*100}return{...item,price,pct,time:meta.regularMarketTime?new Date(meta.regularMarketTime*1000):null}}
 async function fetchQuoteBatch(items){
-  const unique=[...new Set(items.map(x=>x.yahoo))],size=Math.max(1,Math.min(20,Number(CFG.MARKET_BATCH_SIZE)||20)),chunks=[];
+  await window.InfoDeskLongbridge?.load();
+  const map=new Map();for(const item of items){const q=window.InfoDeskLongbridge?.quote(item.yahoo);if(q)map.set(item.yahoo,{status:'fulfilled',value:q})}
+  const unique=[...new Set(items.map(x=>x.yahoo))].filter(s=>!map.has(s)),size=Math.max(1,Math.min(20,Number(CFG.MARKET_BATCH_SIZE)||20)),chunks=[];
   for(let i=0;i<unique.length;i+=size)chunks.push(unique.slice(i,i+size));
-  const map=new Map();
   await Promise.all(chunks.map(async symbols=>{
     try{
       const query="symbols="+encodeURIComponent(symbols.join(","))+"&range=1d&interval=1d";
@@ -174,9 +175,10 @@ async function fetchQuoteBatch(items){
       for(const symbol of symbols){try{const q=quoteFromMeta({yahoo:symbol},rows.get(symbol));map.set(symbol,{status:"fulfilled",value:q})}catch(reason){map.set(symbol,{status:"rejected",reason})}}
     }catch(reason){for(const symbol of symbols)map.set(symbol,{status:"rejected",reason})}
   }));
+  for(const symbol of unique)if(map.get(symbol)?.status==='rejected'){const old=window.InfoDeskLongbridge?.cachedQuote?.(symbol);if(old)map.set(symbol,{status:'fulfilled',value:old})}
   return map;
 }
-function quoteHTML(q){const cls=q.pct>0?"up":q.pct<0?"down":"flat";const sign=q.pct>0?"+":"";return`<div class="quote" data-symbol="${esc(q.yahoo||q.name)}" data-delta="${q.pct!==-100?q.price*q.pct/(100+q.pct):0}"><div><div class="quote-name">${esc(T(q.name))}</div><div class="quote-price">${q.price.toLocaleString("en-HK",{maximumFractionDigits:2})}</div></div><div class="quote-change ${cls}">${sign}${q.pct.toFixed(2)}%</div><div class="quote-time"><span ${q.time?`data-datetime="${+q.time}"`:''}>${q.time?hkDateTime(q.time):T("來源未提供時間")}</span> HKT · Yahoo Finance${IS_EXTENSION?"":L("／Jina 快照"," / Jina snapshot")}</div></div>`}
+function quoteHTML(q){const cls=q.pct>0?"up":q.pct<0?"down":"flat";const sign=q.pct>0?"+":"";const source=q.source==='Longbridge'?(q.cached?L('後備未能取得 · 長橋舊資料 ','FALLBACK UNAVAILABLE · CACHED LONGBRIDGE '):'')+L('資料來源：長橋 · 取得 ','SOURCE: LONGBRIDGE · FETCHED ')+window.InfoDeskLongbridge.date(q.collectedAt):L('資料來源：後備 Yahoo · ','SOURCE: FALLBACK YAHOO · ')+(q.time?hkDateTime(q.time)+' HKT':T('來源未提供時間'));return`<div class="quote" data-source="${q.source==='Longbridge'?'Longbridge':'Yahoo'}" data-symbol="${esc(q.yahoo||q.name)}" data-delta="${q.pct!==-100?q.price*q.pct/(100+q.pct):0}"><div><div class="quote-name">${esc(T(q.name))}</div><div class="quote-price">${q.price.toLocaleString("en-HK",{maximumFractionDigits:2})}</div></div><div class="quote-change ${cls}">${sign}${q.pct.toFixed(2)}%</div><div class="quote-time">${esc(source)}</div></div>`}
 function publicDataError(error){if(error?.name==="AbortError")return "連線逾時，下次更新重試";const message=String(error?.message||"");if(message.includes("429"))return "公開服務限流，下次更新重試";if(/invalid market response|no quote|invalid price/.test(message))return "來源回應沒有有效報價";return "公開來源暫時無法讀取，下次更新重試"}
 async function loadMarket(items,target,stamp,batch=null,touchStamp=true){
   batch=batch||await fetchQuoteBatch(items);const settled=items.map(item=>{const x=batch.get(item.yahoo);return x?.status==="fulfilled"?{status:"fulfilled",value:{...item,...x.value}}:{status:"rejected",reason:x?.reason||new Error("no quote")}});const good=settled.filter(x=>x.status==="fulfilled").map(x=>x.value);$(target).innerHTML=settled.map((x,i)=>x.status==="fulfilled"?quoteHTML(x.value):`<div class="quote" data-symbol="${esc(items[i].yahoo)}"><div class="quote-name">${esc(T(items[i].name))}</div><div class="quote-error">暫時未能取得數據</div><div class="quote-time">${esc(T(publicDataError(x.reason)))}</div></div>`).join("");

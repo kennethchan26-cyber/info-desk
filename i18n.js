@@ -4,6 +4,7 @@ window.InfoDeskI18n = (() => {
   let language='tc',revision=0;
   try{language=localStorage.getItem('dashboard_language')==='en'?'en':'tc'}catch{}
   const words={
+    '2800 盈富基金':'2800 TRACKER FUND','長橋快照 / Yahoo 後備 · 報價可延遲':'LONGBRIDGE SNAPSHOT / YAHOO FALLBACK · MAY BE DELAYED',
     '交通 30 秒；天氣、股票、外匯、本地及國際新聞 60 秒；美股新聞 5 分鐘；Gmail 只在展開時每 5 分鐘；熱搜 15 分鐘。加密貨幣收起時停線。公開數據離線時顯示上次資料，Gmail 不快取。手機背景或關頁後不保證更新，沒有背景推播。':'Transport 30s; weather, stocks, FX, local and world news 60s; CNBC 5min; Gmail 5min only while expanded; trends 15min. Crypto disconnects when collapsed. Public data use the last saved copy offline; Gmail is never cached. No guaranteed background updates or push.',
     '快捷列':'QUICK LINKS','安裝':'INSTALL','有新版本，按此更新':'NEW VERSION — CLICK TO UPDATE','快取':'CACHED',
     '按到站排序':'ARRIVAL ORDER','固定次序':'FIXED ORDER','暫無班次':'NO UPCOMING SERVICE',

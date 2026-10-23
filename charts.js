@@ -43,6 +43,7 @@ window.InfoDeskCharts = (() => {
   function detailURL(symbol,range='1d'){return 'https://query1.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(symbol)+'?range='+range+'&interval='+RANGE[range].interval;}
   function onScreen(node){if(!mountedVisible(node))return false;const r=node.getBoundingClientRect();return r.bottom>0&&r.top<innerHeight&&r.right>0&&r.left<innerWidth;}
   async function fetchDetail(entry){const {symbol,range}=entry,k=key(symbol,range),target=detailURL(symbol,range);detailBusy.add(k);detailAttempts.set(k,Date.now());
+    const lb=range==='1d'&&window.InfoDeskLongbridge?.series(symbol);if(lb){try{const r=parseSeries(lb,range);r.source='Longbridge';r.received=Date.parse(lb.fetchedAt);details.set(k,r)}finally{detailBusy.delete(k);renderAll()}return;}
     try{let body;if(location.protocol==='chrome-extension:'){const res=await(window.InfoDeskNetwork?.fetch||fetch)(target,{credentials:'omit',signal:AbortSignal.timeout(25000)});if(!res.ok)throw new Error('HTTP '+res.status);body=await res.json();}else body=parseResponse(await fetchJinaText('https://r.jina.ai/'+target.replace('https:','http:').replaceAll('&','%26'),25000,{'X-Cache-Tolerance':'60'}));
       if(!body.chart?.result?.[0])throw new Error('Missing series');const r=parseSeries({symbol,response:body.chart.result},range);r.stale=Boolean(window.InfoDeskNetwork?.stale('markets'));details.set(k,r);
     }catch(error){const r=details.get(k);if(r)r.stale=true;if(/429|limit/i.test(String(error)))detailAttempts.set(k,Date.now()+4*PERIOD);}
@@ -68,7 +69,8 @@ window.InfoDeskCharts = (() => {
   function parseResponse(body){if(typeof body!=='string')return body;const start=body.indexOf('{'),end=body.lastIndexOf('}');if(start<0||end<start)throw new Error('Invalid chart response');return JSON.parse(body.slice(start,end+1).replace(/\r?\n\s*/g,''));}
   function targetURL(symbols,range='1d'){return 'https://query1.finance.yahoo.com/v7/finance/spark?symbols='+encodeURIComponent(symbols.join(','))+'&range='+range+'&interval='+RANGE[range].interval;}
   async function fetchBatch(symbols,range='1d'){
-    const unique=[...new Set(symbols)].filter(knownSymbol);if(!unique.length)return;
+    await window.InfoDeskLongbridge?.load();
+    const unique=[...new Set(symbols)].filter(knownSymbol).filter(symbol=>{const lb=range==='1d'&&window.InfoDeskLongbridge?.series(symbol);if(!lb)return true;try{const r=parseSeries(lb,range);r.source='Longbridge';r.received=Date.parse(lb.fetchedAt);records.set(key(symbol,range),r);details.delete(key(symbol,range));lastAttempt.set(key(symbol,range),Date.now());failureUntil.delete(key(symbol,range));return false}catch{return true}});if(!unique.length){renderAll();return;}
     const taskKey=unique.join(',')+'|'+range;if(inflight.has(taskKey))return inflight.get(taskKey);
     const diagnostic={symbols:[...unique],range,transport:location.protocol==='chrome-extension:'?'Yahoo direct':'Jina public reader',started:Date.now(),completed:null,durationMs:null,status:'pending',lastError:null,missing:[]};
     batchDiagnostics.set(taskKey,diagnostic);while(batchDiagnostics.size>40)batchDiagnostics.delete(batchDiagnostics.keys().next().value);
@@ -177,7 +179,7 @@ window.InfoDeskCharts = (() => {
     entry.chart.timeScale().fitContent();entry.dataKey=dataKey;
     if(entry.axis){entry.axis.innerHTML=axisHTML(record,entry.range);requestAnimationFrame(()=>{positionAxis(entry);positionExtrema(entry)});}
     entry.node.querySelector('.chart-volume-status')?.remove();if(!compact){const status=document.createElement('span');status.className='chart-volume-status';status.textContent=record.volume.some(p=>p.value>0)?L('成交量','VOLUME'):detail?L('來源未提供成交量','VOLUME NOT PROVIDED'):L('成交量載入中','VOLUME LOADING');entry.plot.append(status);}
-    if(entry.caption)entry.caption.innerHTML=`${record.stale?L('快取 · ','CACHED · '):''}Yahoo Finance · ${safe(record.granularity)} · ${safe(record.sessionDate||'')} ${safe(timeLabel(record.time))} HKT · ${L('可延遲','MAY BE DELAYED')}`;
+    if(entry.caption)entry.caption.innerHTML=`${record.stale?L('快取 · ','CACHED · '):''}${safe(record.source)} · ${safe(record.granularity)} · ${safe(record.sessionDate||'')} ${safe(timeLabel(record.time))} HKT · ${L('可延遲','MAY BE DELAYED')}`;
     resizeChart(entry);
   }
   function renderAll(){for(const [node,entry]of mounted){if(!node.isConnected){clearChart(entry);mounted.delete(node);continue;}render(entry);}}

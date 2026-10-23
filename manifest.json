@@ -5,6 +5,7 @@
   "description": "新分頁顯示香港天氣、交通、Gmail、市場、外匯及新聞，並只從 WhatsApp Web 分頁標題讀取未讀數字。",
   "permissions": ["tabs", "storage", "identity", "notifications", "alarms"],
   "host_permissions": [
+    "https://raw.githubusercontent.com/*",
     "https://web.whatsapp.com/*",
     "https://data.weather.gov.hk/*",
     "https://data.etagmb.gov.hk/*",
