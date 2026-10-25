@@ -29,10 +29,14 @@ jobs:
       - name: Verify main site was not modified
         run: |
           git ls-files -z '*.html' '*.js' '*.css' | python3 -c "import sys,pathlib; files=sys.stdin.buffer.read().decode().split('\0'); assert all(pathlib.Path(f).read_bytes()==(pathlib.Path('_site')/f).read_bytes() for f in files if f), 'website source changed'"
-      - uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
+      - name: Package static site including original .nojekyll marker
+        run: tar --dereference --hard-dereference --directory _site --exclude=.github -cf "$RUNNER_TEMP/artifact.tar" .
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          path: _site
+          name: github-pages
+          path: ${{ runner.temp }}/artifact.tar
           retention-days: 1
+          if-no-files-found: error
   deploy:
     needs: build
     runs-on: ubuntu-latest
