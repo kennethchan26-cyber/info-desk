@@ -63,3 +63,17 @@
 **/*.log
 **/__pycache__/
 /market.json
+!/lite.html
+!/lite.js
+!/lite-config.json
+!/LITE.md
+!/data/
+/data/*
+!/data/lite.json
+!/.github/
+/.github/*
+!/.github/workflows/
+/.github/workflows/*
+!/.github/workflows/lite-pages.yml
+!/publisher/lite-config.cjs
+!/publisher/lite-snapshot.py

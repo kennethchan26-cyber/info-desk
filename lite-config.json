@@ -1,0 +1,293 @@
+{
+  "schema": 1,
+  "routes": [
+    {
+      "key": "gmb804",
+      "previewAlert": true,
+      "region": "沙田",
+      "destinationEn": "Kwong Yuen",
+      "stopNameEn": "Bus lay-by on Che Kung Miu Road outside Tai Wai Station Public Transport Interchange",
+      "operator": "專線小巴",
+      "route": "804",
+      "destination": "廣源",
+      "stopName": "車公廟路，大圍站公共運輸交匯處外",
+      "api": "gmb",
+      "routeId": 2010275,
+      "routeSeq": 2,
+      "stopSeq": 5,
+      "stopId": "20001582"
+    },
+    {
+      "key": "gmb65k",
+      "previewAlert": true,
+      "region": "沙田",
+      "destinationEn": "Fo Tan Station (Circular)",
+      "stopNameEn": "Au Pui Wan Street, Near Kin Ho Industrial Building Block 2",
+      "operator": "專線小巴",
+      "route": "65K",
+      "destination": "火炭站（循環線）",
+      "stopName": "坳背灣街近金豪工業大廈第二座",
+      "api": "gmb",
+      "routeId": 2009081,
+      "routeSeq": 1,
+      "stopSeq": 6,
+      "stopId": "20001505"
+    },
+    {
+      "key": "gmb69x",
+      "previewAlert": true,
+      "region": "港島",
+      "destinationEn": "Cyberport",
+      "stopNameEn": "Lockhart Road, near Cannon Street",
+      "operator": "專線小巴",
+      "route": "69X",
+      "destination": "數碼港",
+      "stopName": "駱克道近景隆街",
+      "api": "gmb",
+      "routeId": 2000511,
+      "routeSeq": 2,
+      "stopSeq": 1,
+      "stopId": "20006944"
+    },
+    {
+      "key": "bus680",
+      "previewAlert": true,
+      "region": "沙田",
+      "destinationEn": "ADMIRALTY STATION (EAST)",
+      "stopNameEn": "ALVA HOTEL BY ROYAL (ST534)",
+      "operator": "九巴＋城巴",
+      "route": "680",
+      "destination": "金鐘站（東）",
+      "stopName": "帝逸酒店（ST534）",
+      "api": "joint",
+      "kmbStopId": "2223D64E9ED2E1A7",
+      "kmbDirection": "O",
+      "kmbServiceType": "1",
+      "ctbStopId": "003082",
+      "ctbDirection": "I"
+    },
+    {
+      "key": "ctb30x",
+      "previewAlert": true,
+      "region": "港島",
+      "destinationEn": "Admiralty (East)",
+      "stopNameEn": "Cyberport 3, Cyberport Road",
+      "operator": "城巴",
+      "route": "30X",
+      "destination": "金鐘（東）",
+      "stopName": "數碼港三座，數碼港道",
+      "api": "ctb",
+      "stopId": "002393",
+      "direction": "O"
+    },
+    {
+      "key": "kmb281e",
+      "previewAlert": true,
+      "region": "九龍",
+      "destinationEn": "KWONG YUEN",
+      "stopNameEn": "OLYMPIC STATION (MK656)",
+      "operator": "九巴",
+      "route": "281E",
+      "destination": "廣源",
+      "stopName": "奧運站 (MK656)",
+      "api": "kmb",
+      "stopId": "9DA7325E4238402B",
+      "direction": "O",
+      "serviceType": "1",
+      "stopSeq": 10
+    },
+    {
+      "key": "ctb682",
+      "previewAlert": true,
+      "region": "沙田",
+      "destinationEn": "Chai Wan (East)",
+      "stopNameEn": "Adventure Cycling Area, Siu Lek Yuen Road",
+      "operator": "城巴",
+      "route": "682",
+      "destination": "柴灣（東）",
+      "stopName": "歷奇單車場, 小瀝源路",
+      "api": "ctb",
+      "stopId": "003082",
+      "direction": "I",
+      "stopSeq": 19
+    },
+    {
+      "key": "kmb281a",
+      "previewAlert": true,
+      "region": "沙田",
+      "destinationEn": "KOWLOON STATION",
+      "stopNameEn": "SIU LEK YUEN (GREENHILL VILLA) (ST603)",
+      "operator": "九巴",
+      "route": "281A",
+      "destination": "九龍站",
+      "stopName": "小瀝源 (綠怡雅苑) (ST603)",
+      "api": "kmb",
+      "stopId": "75D57F5A5891A1C2",
+      "direction": "O",
+      "serviceType": "1",
+      "stopSeq": 2
+    },
+    {
+      "key": "kmb49x",
+      "previewAlert": true,
+      "region": "沙田",
+      "destinationEn": "TSING YI FERRY",
+      "stopNameEn": "SIU LEK YUEN (GREENHILL VILLA) (ST604)",
+      "operator": "九巴",
+      "route": "49X",
+      "destination": "青衣碼頭",
+      "stopName": "小瀝源 (綠怡雅苑) (ST604)",
+      "api": "kmb",
+      "stopId": "51D13DDB8EBA98AF",
+      "direction": "O",
+      "serviceType": "1",
+      "stopSeq": 2
+    },
+    {
+      "key": "kmb83x",
+      "previewAlert": true,
+      "region": "沙田",
+      "destinationEn": "KWUN TONG FERRY",
+      "stopNameEn": "SIU LEK YUEN (GREENHILL VILLA) (ST604)",
+      "operator": "九巴",
+      "route": "83X",
+      "destination": "觀塘碼頭",
+      "stopName": "小瀝源 (綠怡雅苑) (ST604)",
+      "api": "kmb",
+      "stopId": "51D13DDB8EBA98AF",
+      "direction": "O",
+      "serviceType": "1",
+      "stopSeq": 8
+    },
+    {
+      "key": "kmb86",
+      "previewAlert": true,
+      "region": "沙田",
+      "destinationEn": "MEI FOO",
+      "stopNameEn": "CYPRESS HOUSE KWONG YUEN ESTATE (ST600)",
+      "operator": "九巴",
+      "route": "86",
+      "destination": "美孚",
+      "stopName": "廣源邨廣柏樓 (ST600)",
+      "api": "kmb",
+      "stopId": "260B43921BAFD8CB",
+      "direction": "O",
+      "serviceType": "1",
+      "stopSeq": 2
+    },
+    {
+      "key": "kmb83k",
+      "previewAlert": true,
+      "region": "沙田",
+      "destinationEn": "SHA TIN CENTRAL (CIRCULAR)",
+      "stopNameEn": "CYPRESS HOUSE KWONG YUEN ESTATE (ST601)",
+      "operator": "九巴",
+      "route": "83K",
+      "destination": "沙田市中心（循環線）",
+      "stopName": "廣源邨廣柏樓 (ST601)",
+      "api": "kmb",
+      "stopId": "7E3C2CA5ABEC8416",
+      "direction": "O",
+      "serviceType": "1",
+      "stopSeq": 2
+    },
+    {
+      "key": "kmb83s",
+      "previewAlert": true,
+      "region": "沙田",
+      "destinationEn": "SHATIN CENTRAL",
+      "stopNameEn": "CYPRESS HOUSE KWONG YUEN ESTATE (ST601)",
+      "operator": "九巴",
+      "route": "83S",
+      "destination": "沙田市中心",
+      "stopName": "廣源邨廣柏樓 (ST601)",
+      "api": "kmb",
+      "stopId": "7E3C2CA5ABEC8416",
+      "direction": "O",
+      "serviceType": "1",
+      "stopSeq": 2
+    }
+  ],
+  "currencies": [
+    {
+      "code": "USD",
+      "name": "美元",
+      "en": "US dollar",
+      "units": 1
+    },
+    {
+      "code": "CNY",
+      "name": "人民幣",
+      "en": "Renminbi",
+      "units": 1
+    },
+    {
+      "code": "JPY",
+      "name": "日圓",
+      "en": "Japanese yen",
+      "units": 100
+    },
+    {
+      "code": "GBP",
+      "name": "英鎊",
+      "en": "British pound",
+      "units": 1
+    },
+    {
+      "code": "EUR",
+      "name": "歐元",
+      "en": "Euro",
+      "units": 1
+    },
+    {
+      "code": "AUD",
+      "name": "澳元",
+      "en": "Australian dollar",
+      "units": 1
+    },
+    {
+      "code": "CAD",
+      "name": "加元",
+      "en": "Canadian dollar",
+      "units": 1
+    },
+    {
+      "code": "SGD",
+      "name": "新加坡元",
+      "en": "Singapore dollar",
+      "units": 1
+    },
+    {
+      "code": "TWD",
+      "name": "新台幣",
+      "en": "New Taiwan dollar",
+      "units": 1
+    },
+    {
+      "code": "KRW",
+      "name": "韓圜",
+      "en": "South Korean won",
+      "units": 100
+    },
+    {
+      "code": "THB",
+      "name": "泰銖",
+      "en": "Thai baht",
+      "units": 1
+    },
+    {
+      "code": "CHF",
+      "name": "瑞士法郎",
+      "en": "Swiss franc",
+      "units": 1
+    },
+    {
+      "code": "NZD",
+      "name": "紐西蘭元",
+      "en": "New Zealand dollar",
+      "units": 1
+    }
+  ],
+  "fxUrl": "https://api.frankfurter.dev/v2/rates",
+  "marketUrl": "https://raw.githubusercontent.com/kennethchan26-cyber/info-desk/data/market.json"
+}
