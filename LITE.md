@@ -27,7 +27,7 @@
 | 專線小巴 | `https://data.etagmb.gov.hk/eta/route-stop/{routeId}/{routeSeq}/{stopSeq}` | 30 秒 | 路線、站點及方向從原 `config.js` 投影；不是另維護一套清單 |
 | 恒指、標普 500、納指 | 既有 `data` 分支公開 Longbridge `market.json` | 60 秒 | Actions 重用同一快照；超過 20 分鐘或缺失改查 Yahoo chart API，仍無資料則保留原時間或顯示 — |
 | 13 種外幣兌港元 | `https://api.frankfurter.dev/v2/rates?base=HKD&quotes=USD,CNY,JPY,GBP,EUR,AUD,CAD,SGD,TWD,KRW,THB,CHF,NZD` | 60 秒 | 每日市場中間參考價；每 1 外幣兌 HKD，JPY/KRW 每 100；4 位小數 |
-| 同源後備 | `data/lite.json` | 60 秒 | Actions 約每 5 分鐘生成；排隊和 Pages/CDN 可再延遲，不承諾 30 秒或 60 秒的新鮮度 |
+| 同源後備 | `data/lite.json` | 30 秒（同時服務巴士後備；一般區塊仍有 60 秒更新計時） | Actions 約每 5 分鐘生成；排隊和 Pages/CDN 可再延遲，不承諾 30 秒或 60 秒的新鮮度 |
 
 所有網絡、JSON、渲染入口均有獨立錯誤處理。來源失敗不會停止時鐘或其他區塊。
 直連來源失敗後該主機暫停 5 分鐘再試，避免舊裝置不停重試 TLS 失敗。

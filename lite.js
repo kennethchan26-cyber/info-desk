@@ -161,7 +161,7 @@
         root.setTimeout(function () { root.location.reload(); }, 21600000);
         try { var cached = JSON.parse(root.localStorage.getItem('infodesk_lite_public_v1')); if (cached) { applySnapshot(cached); } } catch (e) {}
         safe(render); xhr('lite-config.json', '本機設定', function (error, cfg) { if (!error && cfg.schema === 1 && cfg.routes && cfg.currencies) { state.config = cfg; } safe(render); safe(loadBuses); safe(loadMarkets); safe(loadFx); });
-        minute(); root.setInterval(minute, 60000); root.setInterval(function () { safe(loadBuses); safe(renderBuses); }, 30000);
+        minute(); root.setInterval(minute, 60000); root.setInterval(function () { safe(loadBuses); safe(loadSnapshot); safe(renderBuses); }, 30000);
         root.setInterval(function () { state.busPage += 1; state.fxPage += 1; safe(renderBuses); safe(renderFx); }, 10000);
         el('diagnosticToggle').onclick = function () { var box = el('diagnostics'); box.style.display = box.style.display === 'block' ? 'none' : 'block'; safe(renderStatus); };
         root.addEventListener('pageshow', function () { safe(clock); });
