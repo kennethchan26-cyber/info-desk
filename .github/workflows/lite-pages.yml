@@ -1,0 +1,50 @@
+name: INFO DESK Pages and Lite snapshot
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    - cron: '2-59/5 * * * *'
+permissions:
+  contents: read
+concurrency:
+  group: info-desk-pages
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Copy unchanged tracked website files
+        run: |
+          mkdir _site
+          git archive HEAD | tar -x -C _site
+      - name: Export public Lite settings from existing configuration
+        run: node publisher/lite-config.cjs _site/lite-config.json
+      - name: Collect anonymous public data only
+        run: python3 publisher/lite-snapshot.py --config _site/lite-config.json --output _site/data/lite.json
+      - name: Verify main site was not modified
+        run: |
+          git ls-files -z '*.html' '*.js' '*.css' | python3 -c "import sys,pathlib; files=sys.stdin.buffer.read().decode().split('\0'); assert all(pathlib.Path(f).read_bytes()==(pathlib.Path('_site')/f).read_bytes() for f in files if f), 'website source changed'"
+      - uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
+        with:
+          path: _site
+          retention-days: 1
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy identical main site plus refreshed Lite JSON
+        id: deployment
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4
+
