@@ -63,10 +63,12 @@ def markets(config):
     result = []
     try:
         data = get(config['marketUrl'] + '?lite=' + str(clock() // 60000))
-        if data.get('publisher') == 'INFO-DESK-LONGBRIDGE' and recent(data.get('collectedAt')):
+        # Reserve ten minutes for the Actions queue, deployment and CDN. Never
+        # ship a nearly expired quote and then pretend the snapshot made it new.
+        if data.get('publisher') == 'INFO-DESK-LONGBRIDGE' and recent(data.get('collectedAt'), 600000):
             for symbol in SYMBOLS:
                 q = data.get('quotes', {}).get(symbol, {})
-                if recent(q.get('fetchedAt')) and number(q.get('price')) and number(q.get('pct')) is not None:
+                if recent(q.get('fetchedAt'), 600000) and number(q.get('price')) and number(q.get('pct')) is not None:
                     result.append({'symbol': symbol, 'price': q['price'], 'pct': q['pct'],
                                    'fetchedAt': epoch(q['fetchedAt']), 'source': '長橋同源快照'})
     except Exception:
