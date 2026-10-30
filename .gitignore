@@ -18,6 +18,7 @@
 !/i18n.js
 !/forex.js
 !/public-data.js
+!/user-settings.js
 !/transit-order.js
 !/news-extra.js
 !/pwa.js

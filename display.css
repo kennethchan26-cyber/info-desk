@@ -198,3 +198,10 @@ html.tv-mode [data-rail-type="indices"] .rail-stock>b{grid-row:1;line-height:1}
 html.tv-mode [data-rail-type="indices"] .rail-stock .quote-change{grid-row:2;grid-column:1 / -1;line-height:1;text-align:right}
 html.tv-mode .tv-rail-fx>strong,html.tv-mode .tv-rail-fx>span{line-height:1}
 
+/* bus-custom tidy 30/10/2026: 1080p TV — larger secondary text, roomier transit rows */
+html.tv-mode .tv-type-transit .route-card{grid-template-columns:150px minmax(0,1fr) 42%!important;gap:18px}
+html.tv-mode .tv-type-transit .route-stop{font-size:18px!important}
+html.tv-mode .tv-type-transit .route-dest{font-size:28px!important}
+html.tv-mode .tv-type-transit .eta small{font-size:15px!important}
+html.tv-mode .tv-type-transit .eta-operator{display:none}
+html.tv-mode .route-schedule{font-size:26px}
